@@ -14,8 +14,7 @@ screen = pygame.display.set_mode((screen_width,
                                   screen_height))
 
 # caption and icon
-pygame.display.set_caption("Welcome to Space\
-Invaders Game by:- styles")
+pygame.display.set_caption("space invaders....")
 
 
 # Score
@@ -29,6 +28,7 @@ player_lives = 3
 # Game Over
 game_over_font = pygame.font.Font('freesansbold.ttf', 64)
 game_won_font = pygame.font.Font('freesansbold.ttf', 64)
+title_font = pygame.font.Font('freesansbold.ttf', 40)
 #subhead_font = pygame.font.Font('freesansbold.ttf', 16)
 
 def show_score(x, y):
@@ -49,27 +49,25 @@ def game_over():
                              True, (255,255,255))
     screen.blit(score_text, (320, 350))
     pygame.display.update()
-    waiting = True
-    while waiting:
+    while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                waiting = False
+                return False
 
 def game_won():
     screen.fill((0, 0, 0))
 
     game_won_text = game_won_font.render("congrats!", True, (255,255,255))
-    subhead = font.render("you're a mass murderer.", True, (255,255,255))
+    subhead = font.render("you've commited a mass murder.", True, (255,255,255))
     screen.blit(game_won_text, (240, 200))
-    screen.blit(subhead, ( 265, 300))
+    screen.blit(subhead, ( 235, 300))
 
     pygame.display.update()
 
-    waiting = True
-    while waiting:
+    while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                waiting = False
+                return False
 
 
 
@@ -84,6 +82,10 @@ def scale_keep_aspect(image, target_width):
 #mixer.music.load('data/background.wav')
 #mixer.music.play(-1)
 
+# bg images
+start_bg = pygame.image.load("data/start_screen.png")
+bg = pygame.image.load("data/background.png")
+game_bg = scale_keep_aspect(bg, 910).convert()
 
 # player
 tardis = pygame.image.load('data/tardis.png')
@@ -158,6 +160,27 @@ def bullet(x, y):
 
 def enemy_bullet(x, y):
     screen.blit(bulletImage, (x, y))
+
+
+def start_menu():
+    screen.blit(start_bg, (0, 0))
+
+    title = title_font.render("SPACE INVADERS", True, (255,255,255))
+    subtitle = font.render("press space to start!", True, (255,255,255))
+
+    screen.blit(title, (20, 200))
+    screen.blit(subtitle, (20, 300))
+
+    pygame.display.update()
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                return False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    return True
 
 
 def events():
@@ -306,7 +329,7 @@ def main():
     running = True
     won = False
     while running:
-        screen.fill((0, 0, 0))
+        screen.blit(game_bg, (0, 0))
 
         events()
         move_player()
@@ -330,7 +353,8 @@ def main():
 
 
 if __name__ == "__main__":
-    won = main()
+    if start_menu():
+        won = main()
     if player_lives <= 0:
         game_over()
     elif won:
