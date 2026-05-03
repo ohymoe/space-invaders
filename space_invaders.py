@@ -57,7 +57,7 @@ playerImage = scale_keep_aspect(tardis, 60)
 player_X = 370
 player_Y = 470
 player_Xchange = 0
-
+player_speed = 1
 
 # Invader
 invaderImage = []
@@ -66,6 +66,7 @@ invader_Y = []
 invader_Xchange = []
 invader_Ychange = []
 no_of_invaders = 8
+invader_alive = [True] * no_of_invaders
 
 for num in range(no_of_invaders):
     invaderImage.append(pygame.image.load('data/dalek.png'))
@@ -86,13 +87,18 @@ bullet_Ychange = 3
 bullet_state = "rest"
 
 #enemy shooting 
-#current_shooting system 
-current_chooter = None 
+
+# shooting system 
+shooting = False 
+shoot_timer = 0
+shoot_duration = 1500
+shoot_cooldown = 3000
+current_shooter = None
 
 
 # enemy bullets 
 enemy_bullets = []
-enemy_bullet_speed = 2
+enemy_bullet_speed = 1
 
 
 # Collision Concept
@@ -115,6 +121,10 @@ def bullet(x, y):
     screen.blit(bulletImage, (x, y))
     bullet_state = "fire"
 
+def enemy_bullet(x, y):
+    screen.blit(bulletImage, (x, y))
+
+
 # game loop
 running = True
 while running:
@@ -129,9 +139,9 @@ while running:
         # from the arrow keys
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
-                player_Xchange = -1.7
+                player_Xchange = -player_speed
             if event.key == pygame.K_RIGHT:
-                player_Xchange = 1.7
+                player_Xchange = player_speed
             if event.key == pygame.K_SPACE:
               
                 # Fixing the change of direction of bullet
@@ -149,10 +159,6 @@ while running:
     for i in range(no_of_invaders):
         invader_X[i] += invader_Xchange[i]
 
-        if random.randint(1, 200) == 1:  # 1-in-200 chance per frame
-            enemy_bullets.append([invader_X[i] + 16, invader_Y[i] + 20])
-
-
     # bullet movement
     if bullet_Y <= 0:
         bullet_Y = 600
@@ -161,20 +167,36 @@ while running:
         bullet(bullet_X, bullet_Y)
         bullet_Y -= bullet_Ychange
 
-        # Move and draw enemy bullets
     for b in enemy_bullets:
         b[1] += enemy_bullet_speed
-        screen.blit(bulletImage, (b[0], b[1]))
+        enemy_bullet(b[0], b[1])
+    
+    enemy_bullets = [b for b in enemy_bullets if b[1] < 600]
+    shoot_timer += 1
+    # start shooting
+    if not shooting: 
+        if shoot_timer > shoot_cooldown:
+            shooting = True
+            shoot_timer = 0
 
-        # Check collision between enemy bullets and player
-    for b in enemy_bullets:
-        if abs(b[0] - player_X) < 30 and abs(b[1] - player_Y) < 30:
-            print(f"[DEBUG] Player HIT by enemy bullet at ({b[0]}, {b[1]})")
-            enemy_bullets.remove(b)
+            enemies_alive = []
+            for i in range(no_of_invaders):
+                if invader_alive[i]:
+                    enemies_alive.append(i)
+            if enemies_alive:
+                current_shooter = random.choice(enemies_alive)
+            else:
+                current_shooter = None
+                
+            print("Enemies start shooting")
 
-            # Player hit — end game or reduce health
-            # game_over()
-
+    # stop shooting 
+    if shooting and shoot_timer > shoot_duration: 
+        shooting = False
+        shoot_timer = 0
+        current_shooter = None
+        print("Enemies stop shooting")
+    
         # Remove off-screen enemy bullets
     enemy_bullets = [b for b in enemy_bullets if b[1] < 600]
 
@@ -205,9 +227,15 @@ while running:
             invader_X[i] = -200
             invader_Y[i] = -200
             invader_Xchange[i] = 0
+            invader_alive[i] = False
 
         if invader_Y[i] >= 0:
             invader(invader_X[i], invader_Y[i], i)
+        
+        if shooting and i == current_shooter:
+            if random.randint(1,300) == 1:
+                enemy_bullets.append([invader_X[i] + invaderImage[i].get_width() // 2 - bulletImage.get_width() //2, invader_Y[i] + invaderImage[i].get_height()])
+                print(f"enemy {i} fired")
 
 
     # restricting the spaceship so that
