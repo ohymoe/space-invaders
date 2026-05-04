@@ -7,6 +7,14 @@ from pygame import mixer
 #helllo
 pygame.init()
 
+import os, sys
+
+def resource_path(relative_path):
+    if hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(relative_path)
+
+
 # creating screen
 screen_width = 800
 screen_height = 600
@@ -71,7 +79,7 @@ def game_won():
 
 
 
-# i stole this code
+# AI written
 def scale_keep_aspect(image, target_width):
     # Calculate the ratio
     ratio = target_width / image.get_width()
@@ -83,12 +91,12 @@ def scale_keep_aspect(image, target_width):
 #mixer.music.play(-1)
 
 # bg images
-start_bg = pygame.image.load("data/start_screen.png")
-bg = pygame.image.load("data/background.png")
+start_bg = pygame.image.load(resource_path("data/start_screen.png"))
+bg = pygame.image.load(resource_path("data/background.png"))
 game_bg = scale_keep_aspect(bg, 910).convert()
 
 # player
-tardis = pygame.image.load('data/tardis.png')
+tardis = pygame.image.load(resource_path('data/tardis.png'))
 playerImage = scale_keep_aspect(tardis, 60)
 
 player_X = 370
@@ -106,7 +114,7 @@ no_of_invaders = 8
 invader_alive = [True] * no_of_invaders
 
 for num in range(no_of_invaders):
-    invaderImage.append(pygame.image.load('data/dalek.png'))
+    invaderImage.append(pygame.image.load(resource_path('data/dalek.png')))
     invader_X.append(random.randint(64, 737))
     invader_Y.append(random.randint(30, 180))
     invader_Xchange.append(0.2)
@@ -115,7 +123,7 @@ for num in range(no_of_invaders):
 # Bullet
 # rest - bullet is not moving
 # fire - bullet is moving
-laser = pygame.image.load('data/laser.png')
+laser = pygame.image.load(resource_path('data/laser.png'))
 bulletImage = scale_keep_aspect(laser, 65)
 bullet_X = 0
 bullet_Y = 500
