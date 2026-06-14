@@ -1,0 +1,39 @@
+# server.py
+
+import socket
+import threading
+
+PORT = 5050
+clients = [] # list of connected players' sockets
+
+def send_message(sock, message):
+    sock.sendall((message + "\n").encode("utf-8")) #send message to one client: string -> bytes
+
+def broadcast(message, source = None): #send msg to all clients 
+    for client in clients[:]: #copy of clients list
+        if client != source: # except one who sent the message
+            try:
+                send_message(client, message)
+            except OSError:
+                clients.remove(client)
+                
+def handle_client(client, address): # listens for messages from 1 client
+    reader = client.makefile("r", encoding="utf-8") 
+    for line in reader:
+        msg = line.rstrip("\n")
+        broadcast(msg, source=client)
+
+def accept_clients(server):
+    while True:
+        client, address = server.accept()
+        clients.append(client)
+        threading.Thread(target=handle_client, args=(client, address), daemon=True).start()
+
+def start_server():
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind(("0.0.0.0", 5000))
+    server.listen()
+    accept_clients(server)
+
+if __name__ == "__main__":
+    start_server()
