@@ -5,12 +5,40 @@ from pygame import mixer
 
 import socket
 import threading
-import json
 
 PORT = 5050
 sock = None
-game_state = None
-lobby_state = None
+incoming_messages = []
+role = None
+
+
+# listeneer thread 
+def listen_for_messages(s):
+    global incoming_messages
+    try:
+        reader = s.makefile("r", encoding="utf-8")
+        for line in reader:
+            msg = line.rstrip("\n")
+            incoming_messages.append(msg)
+    except OSError:
+        pass
+
+def start_client(host_ip):
+    global sock
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect((host_ip, PORT))
+
+    thread = threading.Thread(target=listen_for_messages, args=(sock,), daemon=True)
+    thread.start()
+
+def send_message(msg: str):
+    global sock
+    if sock is None:
+        return
+    try:
+        sock.sendall((msg + "\n").encode("utf-8"))
+    except OSError:
+        pass
 
 
 # initializing pygame
@@ -34,6 +62,7 @@ screen = pygame.display.set_mode((screen_width,
 # caption and icon
 pygame.display.set_caption("space invaders....")
 
+player_lives = 3  
 
 # Score
 score_val = 0
@@ -406,6 +435,8 @@ if __name__ == "__main__":
         pygame.quit()
     if mode == "host":
         # runs solo for now, will add multiplayer later
+        role = "P1"
+        start_client("127.0.0.1")
         won = main()
         if player_lives <= 0:
             game_over()
@@ -414,6 +445,9 @@ if __name__ == "__main__":
         pygame.quit()
 
     if mode == "join":
+        role = "P2"
+        ip = input("Enter host IP: ")
+        start_client(ip)
         # runs solo for now, will add multiplayer later
         won = main()
         if player_lives <= 0:
