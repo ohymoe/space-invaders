@@ -3,6 +3,16 @@ import random
 import math
 from pygame import mixer
 
+import socket
+import threading
+import json
+
+PORT = 5050
+sock = None
+game_state = None
+lobby_state = None
+
+
 # initializing pygame
 #helllo
 pygame.init()
@@ -31,7 +41,6 @@ scoreX = 5
 scoreY = 5
 font = pygame.font.Font('freesansbold.ttf', 20)
 
-player_lives = 3
 
 # Game Over
 game_over_font = pygame.font.Font('freesansbold.ttf', 64)
@@ -98,6 +107,23 @@ game_bg = scale_keep_aspect(bg, 910).convert()
 # player
 tardis = pygame.image.load(resource_path('data/tardis.png'))
 playerImage = scale_keep_aspect(tardis, 60)
+
+class Player:
+    def __init__(self, x, y, image):
+        self.x = x
+        self.y = y
+        self.speed = 1
+        self.xchange = 0
+        self.lives = 3
+        self.image = image
+
+    def move(self):
+        self.x += self.xchange
+        self.x = max(16, min(750, self.x))
+
+    def draw(self, screen):
+        screen.blit(self.image, (self.x - 16, self.y + 10))
+
 
 player_X = 370
 player_Y = 470
@@ -174,21 +200,29 @@ def start_menu():
     screen.blit(start_bg, (0, 0))
 
     title = title_font.render("SPACE INVADERS", True, (255,255,255))
-    subtitle = font.render("press space to start!", True, (255,255,255))
+    subtitle1 = font.render("SPACE = Solo", True, (255,255,255))
+    subtitle2 = font.render("H = Host Multiplayer", True, (255,255,255))
+    subtitle3 = font.render("J = Join Multiplayer", True, (255,255,255))
 
     screen.blit(title, (20, 200))
-    screen.blit(subtitle, (20, 300))
-
+    screen.blit(subtitle1, (20, 260))
+    screen.blit(subtitle2, (20, 300))
+    screen.blit(subtitle3, (20, 340))
+    
     pygame.display.update()
 
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
-                return False
+                return None
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_SPACE:
-                    return True
+                    return "solo"
+                if event.key == pygame.K_h:
+                    return "host"
+                if event.key == pygame.K_j:
+                    return "join"
 
 
 def events():
@@ -269,7 +303,7 @@ def update_invaders():
             if abs(player_X-invader_X[i]) < 80:
                 for j in range(no_of_invaders):
                     invader_Y[j] = 2000
-                # game_over()
+                game_over()
                 break
         
         if invader_X[i] >= 735 or invader_X[i] <= 0:
@@ -361,11 +395,29 @@ def main():
 
 
 if __name__ == "__main__":
-    if start_menu():
-        won = main()
-    if player_lives <= 0:
-        game_over()
-    elif won:
-        game_won()
+    mode = start_menu()
 
-    pygame.quit()
+    if mode == "solo":
+        won = main()
+        if player_lives <= 0:
+            game_over()
+        elif won:
+            game_won()
+        pygame.quit()
+    if mode == "host":
+        # runs solo for now, will add multiplayer later
+        won = main()
+        if player_lives <= 0:
+            game_over()
+        elif won:
+            game_won()
+        pygame.quit()
+
+    if mode == "join":
+        # runs solo for now, will add multiplayer later
+        won = main()
+        if player_lives <= 0:
+            game_over()
+        elif won:
+            game_won()
+        pygame.quit()        
