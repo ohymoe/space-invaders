@@ -31,8 +31,9 @@ def accept_clients(server):
 
 def start_server():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(("0.0.0.0", 5000))
+    server.bind(("0.0.0.0", 5050))
     server.listen()
+    print("Server running on port 5050")
     accept_clients(server)
 
 if __name__ == "__main__":

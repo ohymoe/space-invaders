@@ -1,3 +1,4 @@
+
 import pygame
 import random
 import math
@@ -27,6 +28,8 @@ def start_client(host_ip):
     global sock
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect((host_ip, PORT))
+
+    send_message("JOINED") #tell host i joined!11
 
     thread = threading.Thread(target=listen_for_messages, args=(sock,), daemon=True)
     thread.start()
@@ -420,6 +423,55 @@ def main():
             won = True
     return won
         
+def get_local_ip():
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "127.0.0.1"
+
+
+def host_lobby():
+    player_joined = False
+    global lobby_state
+    local_ip = get_local_ip()
+    clock = pygame.time.Clock()
+
+    while True:
+
+        if player_joined:
+            info1 = font.render("Players ready!", True, (255,255,255))
+        else:
+            info1 = font.render("Waiting for other player...", True, (255,255,255))
+
+        screen.fill((0, 0, 0))
+
+        ip_text = font.render(f"Your IP: {local_ip}", True, (255,255,255))
+        info2 = font.render("ENTER to start", True, (255,255,255))
+
+        screen.blit(info1, (20, 220))
+        screen.blit(ip_text, (20, 180))
+        screen.blit(info2, (20, 260))
+        pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_RETURN:
+                    send_message("START")
+                    return
+                
+        # check for JOINED message 
+        while incoming_messages:
+            msg = incoming_messages.pop(0)
+            if msg == "JOINED":
+                player_joined = True
+            
 
 
 
@@ -433,10 +485,12 @@ if __name__ == "__main__":
         elif won:
             game_won()
         pygame.quit()
+
     if mode == "host":
         # runs solo for now, will add multiplayer later
         role = "P1"
         start_client("127.0.0.1")
+        host_lobby()
         won = main()
         if player_lives <= 0:
             game_over()
