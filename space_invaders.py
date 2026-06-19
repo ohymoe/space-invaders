@@ -1,5 +1,5 @@
 
-import pygame
+import pygame as pg
 import random
 import math
 from pygame import mixer
@@ -11,6 +11,7 @@ PORT = 5050
 sock = None
 incoming_messages = []
 role = None
+lobby_state = None
 
 
 # listeneer thread 
@@ -46,7 +47,7 @@ def send_message(msg: str):
 
 # initializing pygame
 #helllo
-pygame.init()
+pg.init()
 
 import os, sys
 
@@ -59,11 +60,11 @@ def resource_path(relative_path):
 # creating screen
 screen_width = 800
 screen_height = 600
-screen = pygame.display.set_mode((screen_width,
+screen = pg.display.set_mode((screen_width,
                                   screen_height))
 
 # caption and icon
-pygame.display.set_caption("space invaders....")
+pg.display.set_caption("space invaders....")
 
 player_lives = 3  
 
@@ -71,14 +72,14 @@ player_lives = 3
 score_val = 0
 scoreX = 5
 scoreY = 5
-font = pygame.font.Font('freesansbold.ttf', 20)
+font = pg.font.Font('freesansbold.ttf', 20)
 
 
 # Game Over
-game_over_font = pygame.font.Font('freesansbold.ttf', 64)
-game_won_font = pygame.font.Font('freesansbold.ttf', 64)
-title_font = pygame.font.Font('freesansbold.ttf', 40)
-#subhead_font = pygame.font.Font('freesansbold.ttf', 16)
+game_over_font = pg.font.Font('freesansbold.ttf', 64)
+game_won_font = pg.font.Font('freesansbold.ttf', 64)
+title_font = pg.font.Font('freesansbold.ttf', 40)
+#subhead_font = pg.font.Font('freesansbold.ttf', 16)
 
 def show_score(x, y):
     score = font.render("Points: " + str(score_val),
@@ -97,10 +98,10 @@ def game_over():
     score_text = font.render("Final Score: " + str(score_val),
                              True, (255,255,255))
     screen.blit(score_text, (320, 350))
-    pygame.display.update()
+    pg.display.update()
     while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
                 return False
 
 def game_won():
@@ -111,11 +112,11 @@ def game_won():
     screen.blit(game_won_text, (240, 200))
     screen.blit(subhead, ( 235, 300))
 
-    pygame.display.update()
+    pg.display.update()
 
     while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
                 return False
 
 
@@ -125,19 +126,19 @@ def scale_keep_aspect(image, target_width):
     # Calculate the ratio
     ratio = target_width / image.get_width()
     target_height = int(image.get_height() * ratio)
-    return pygame.transform.smoothscale(image, (target_width, target_height))
+    return pg.transform.smoothscale(image, (target_width, target_height))
 
 # Background Sound
 #mixer.music.load('data/background.wav')
 #mixer.music.play(-1)
 
 # bg images
-start_bg = pygame.image.load(resource_path("data/start_screen.png"))
-bg = pygame.image.load(resource_path("data/background.png"))
+start_bg = pg.image.load(resource_path("data/start_screen.png"))
+bg = pg.image.load(resource_path("data/background.png"))
 game_bg = scale_keep_aspect(bg, 910).convert()
 
 # player
-tardis = pygame.image.load(resource_path('data/tardis.png'))
+tardis = pg.image.load(resource_path('data/tardis.png'))
 playerImage = scale_keep_aspect(tardis, 60)
 
 class Player:
@@ -172,7 +173,7 @@ no_of_invaders = 8
 invader_alive = [True] * no_of_invaders
 
 for num in range(no_of_invaders):
-    invaderImage.append(pygame.image.load(resource_path('data/dalek.png')))
+    invaderImage.append(pg.image.load(resource_path('data/dalek.png')))
     invader_X.append(random.randint(64, 737))
     invader_Y.append(random.randint(30, 180))
     invader_Xchange.append(0.2)
@@ -181,7 +182,7 @@ for num in range(no_of_invaders):
 # Bullet
 # rest - bullet is not moving
 # fire - bullet is moving
-laser = pygame.image.load(resource_path('data/laser.png'))
+laser = pg.image.load(resource_path('data/laser.png'))
 bulletImage = scale_keep_aspect(laser, 65)
 bullet_X = 0
 bullet_Y = 500
@@ -241,37 +242,37 @@ def start_menu():
     screen.blit(subtitle2, (20, 300))
     screen.blit(subtitle3, (20, 340))
     
-    pygame.display.update()
+    pg.display.update()
 
     while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
                 return None
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE:
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_SPACE:
                     return "solo"
-                if event.key == pygame.K_h:
+                if event.key == pg.K_h:
                     return "host"
-                if event.key == pygame.K_j:
+                if event.key == pg.K_j:
                     return "join"
 
 
 def events():
     global running, player_Xchange, bullet_state, bullet_X, bullet_Y
 
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+    for event in pg.event.get():
+        if event.type == pg.QUIT:
             running = False
 
         # Controlling the player movement
         # from the arrow keys
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT:
+        if event.type == pg.KEYDOWN:
+            if event.key == pg.K_LEFT:
                 player_Xchange = -player_speed
-            if event.key == pygame.K_RIGHT:
+            if event.key == pg.K_RIGHT:
                 player_Xchange = player_speed
-            if event.key == pygame.K_SPACE:
+            if event.key == pg.K_SPACE:
               
                 # Fixing the change of direction of bullet
                 if bullet_state == "rest":
@@ -280,7 +281,7 @@ def events():
                     bullet(bullet_X, bullet_Y)
                     # bullet_sound = mixer.Sound('data/bullet.wav')
                     # bullet_sound.play()
-        if event.type == pygame.KEYUP:
+        if event.type == pg.KEYUP:
             player_Xchange = 0 
 
 def move_player():
@@ -413,7 +414,7 @@ def main():
         update_shooting()
         draw()
 
-        pygame.display.update()
+        pg.display.update()
 
         if player_lives <= 0:
             running = False 
@@ -438,33 +439,34 @@ def host_lobby():
     player_joined = False
     global lobby_state
     local_ip = get_local_ip()
-    clock = pygame.time.Clock()
+    clock = pg.time.Clock()
 
     while True:
 
         if player_joined:
             info1 = font.render("Players ready!", True, (255,255,255))
+            info2 = font.render("ENTER to start", True, (255,255,255))
+            screen.blit(info2, (20, 260))
+            for event in pg.event.get():
+                if event.type == pg.QUIT:
+                    pg.quit()
+                    sys.exit()
+                if event.type == pg.KEYDOWN:
+                    if event.key == pg.K_RETURN:
+                        send_message("START")
+                        return
+
+
         else:
             info1 = font.render("Waiting for other player...", True, (255,255,255))
 
         screen.fill((0, 0, 0))
 
         ip_text = font.render(f"Your IP: {local_ip}", True, (255,255,255))
-        info2 = font.render("ENTER to start", True, (255,255,255))
 
         screen.blit(info1, (20, 220))
         screen.blit(ip_text, (20, 180))
-        screen.blit(info2, (20, 260))
-        pygame.display.update()
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RETURN:
-                    send_message("START")
-                    return
+        pg.display.update()
                 
         # check for JOINED message 
         while incoming_messages:
@@ -472,7 +474,69 @@ def host_lobby():
             if msg == "JOINED":
                 player_joined = True
             
+def join_input():
 
+    ip_str = ""
+    clock = pg.time.Clock()
+
+    while True:
+
+        screen.fill((0, 0, 0))
+        title = title_font.render("JOIN GAME", True, (255,255,255))
+        prompt = font.render("Enter host IP on host's screen: ", True, (255,255,255))
+        ip_render = font.render(ip_str + "_", True, (0,255,0))
+
+        screen.blit(title, (20, 150))
+        screen.blit(prompt, (20, 220))
+        screen.blit(ip_render, (20, 260))
+
+        pg.display.update()
+
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                return None
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_RETURN:
+                    return ip_str.strip()
+                elif event.key == pg.K_BACKSPACE:
+                    ip_str = ip_str[:-1]
+                else:
+                    if len(event.unicode) == 1 and (event.unicode.isdigit() or event.unicode == '.' or event.unicode == ':'):
+                        ip_str += event.unicode
+
+        clock.tick(30)
+
+
+def join_lobby():
+    clock = pg.time.Clock()
+    while True:
+        screen.fill((0, 0, 0))
+        title = title_font.render("JOIN LOBBY", True, (255,255,255))
+
+        if lobby_state:
+            players = lobby_state["players"]
+            max_players = lobby_state["max_players"]
+        else:
+            players = 1
+            max_players = 2
+
+        # players_text = font.render(f"Players connected: {players}/{max_players}", True, (255,255,255))
+
+        info1 = font.render("Waiting for host to start... chop chop", True, (255,255,255))
+
+        screen.blit(title, (20, 150))
+        # screen.blit(players_text, (20, 220))
+        screen.blit(info1, (20, 260))
+
+        pg.display.update()
+
+        while incoming_messages:
+            msg = incoming_messages.pop(0)
+            if msg == "START":
+                return True
+
+        clock.tick(30)
 
 
 if __name__ == "__main__":
@@ -484,28 +548,32 @@ if __name__ == "__main__":
             game_over()
         elif won:
             game_won()
-        pygame.quit()
+        pg.quit()
 
     if mode == "host":
         # runs solo for now, will add multiplayer later
         role = "P1"
         start_client("127.0.0.1")
         host_lobby()
-        won = main()
-        if player_lives <= 0:
-            game_over()
-        elif won:
-            game_won()
-        pygame.quit()
+        # main_multiplayer()
+
+        # won = main()
+        # if player_lives <= 0:
+        #     game_over()
+        # elif won:
+        #     game_won()
+        pg.quit()
 
     if mode == "join":
         role = "P2"
-        ip = input("Enter host IP: ")
-        start_client(ip)
-        # runs solo for now, will add multiplayer later
-        won = main()
-        if player_lives <= 0:
-            game_over()
-        elif won:
-            game_won()
-        pygame.quit()        
+        ip = join_input()
+        if ip:
+            start_client(ip)
+            join_lobby()
+            # main_multiplayer()
+                
+                # if player_lives <= 0:
+                #     game_over()
+                # elif won:
+                #     game_won()
+        pg.quit()        
