@@ -186,6 +186,11 @@ player_speed = 1
 player2_X = 370
 player2_Y = 470
 player2_Xchange = 0
+
+left_held = False
+right_held = False
+
+
 # Invader
 invaderImage = []
 invader_X = []
@@ -285,20 +290,18 @@ def start_menu():
 
 
 def events():
-    global running, player_Xchange, bullet_state, bullet_X, bullet_Y
+    global running, left_held, right_held, player_Xchange
 
     for event in pg.event.get():
         if event.type == pg.QUIT:
             running = False
 
-        # Controlling the player movement
-        # from the arrow keys
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_LEFT:
-                player_Xchange = -player_speed
+                left_held = True
                 send_message("MOVE LEFT")
             if event.key == pg.K_RIGHT:
-                player_Xchange = player_speed
+                right_held = True
                 send_message("MOVE RIGHT")
             if event.key == pg.K_SPACE:
                 local_bullets.append([
@@ -306,9 +309,24 @@ def events():
                     player_Y - bulletImage.get_height()
                 ])
                 send_message("SHOOT")
+
         if event.type == pg.KEYUP:
-            player_Xchange = 0 
-            send_message("MOVE STOP")
+            if event.key == pg.K_LEFT:
+                left_held = False
+            if event.key == pg.K_RIGHT:
+                right_held = False
+
+            # when both keys are released, tell remote to stop
+            if not left_held and not right_held:
+                send_message("MOVE STOP")
+
+    if left_held and not right_held:
+        player_Xchange = -player_speed
+    elif right_held and not left_held:
+        player_Xchange = player_speed
+    else:
+        player_Xchange = 0
+
 
 def move_player():
     global player_X
@@ -606,7 +624,7 @@ if __name__ == "__main__":
         role = "P1"
         start_client("127.0.0.1")
         host_lobby()
-        # main_multiplayer()
+        main_multiplayer()
 
         # won = main()
         # if player_lives <= 0:
@@ -618,10 +636,12 @@ if __name__ == "__main__":
     if mode == "join":
         role = "P2"
         ip = join_input()
-        if ip:
-            start_client(ip)
-            join_lobby()
-            # main_multiplayer()
+        # if ip:
+        #     start_client(ip)
+        #     join_lobby()
+        start_client("127.0.0.1")
+
+        main_multiplayer()
                 
                 # if player_lives <= 0:
                 #     game_over()
