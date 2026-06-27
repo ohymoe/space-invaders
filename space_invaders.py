@@ -306,10 +306,8 @@ def events():
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_LEFT:
                 left_held = True
-                send_message("MOVE LEFT")
             if event.key == pg.K_RIGHT:
                 right_held = True
-                send_message("MOVE RIGHT")
             if event.key == pg.K_SPACE:
                 local_bullets.append([
                     player_X - 16 + playerImage.get_width()//2 - bulletImage.get_width()//2,
@@ -322,17 +320,16 @@ def events():
                 left_held = False
             if event.key == pg.K_RIGHT:
                 right_held = False
-
-            # when both keys are released, tell remote to stop
-            if not left_held and not right_held:
-                send_message("MOVE STOP")
-
+# local 
     if left_held and not right_held:
         player_Xchange = -player_speed
+        send_message("MOVE LEFT")
     elif right_held and not left_held:
         player_Xchange = player_speed
+        send_message("MOVE RIGHT")
     else:
         player_Xchange = 0
+        send_message("MOVE STOP")
 
 
 def move_player():
