@@ -157,12 +157,16 @@ class Player:
     def draw(self, screen):
         screen.blit(self.image, (self.x - 16, self.y + 10))
 
-
+# player positions
 player_X = 370
 player_Y = 470
 player_Xchange = 0
 player_speed = 1
 
+# remote player position
+player2_X = 370
+player2_Y = 470
+player2_Xchange = 0
 # Invader
 invaderImage = []
 invader_X = []
@@ -270,8 +274,10 @@ def events():
         if event.type == pg.KEYDOWN:
             if event.key == pg.K_LEFT:
                 player_Xchange = -player_speed
+                send_message("MOVE LEFT")
             if event.key == pg.K_RIGHT:
                 player_Xchange = player_speed
+                send_message("MOVE RIGHT")
             if event.key == pg.K_SPACE:
               
                 # Fixing the change of direction of bullet
@@ -283,6 +289,7 @@ def events():
                     # bullet_sound.play()
         if event.type == pg.KEYUP:
             player_Xchange = 0 
+            send_message("MOVE STOP")
 
 def move_player():
     global player_X
@@ -395,8 +402,14 @@ def update_shooting():
 def draw():
     player(player_X, player_Y)
     show_score(scoreX, scoreY)
+    if role == "P1":
+        # draw P2
+        screen.blit(playerImage, (player2_X - 16, player2_Y + 10))
+    else:
+        # draw P1
+        screen.blit(playerImage, (player_X - 16, player_Y + 10))
 
-
+    
 
 
 def main():    
@@ -537,6 +550,23 @@ def join_lobby():
                 return True
 
         clock.tick(30)
+
+
+def main_multiplayer():
+    global running
+    running = True
+    while running:
+        screen.blit(game_bg, (0, 0))
+        events()
+        move_player()
+        update_bullet()
+        update_invaders()
+        draw()
+        pg.display.update()
+        
+        
+
+
 
 
 if __name__ == "__main__":
