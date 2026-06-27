@@ -104,6 +104,10 @@ def remote_input():
             invader_X[idx] = int(x)
             invader_Y[idx] = int(y)
             invader_alive[idx] = bool(int(alive))
+        elif msg.startswith("EBULLET"):
+            _, x, y = msg.split()
+            enemy_bullets.append([float(x), float(y)])
+
 
 
 
@@ -412,8 +416,13 @@ def update_invaders():
         
         if shooting and i == current_shooter:
             if random.randint(1,300) == 1:
-                enemy_bullets.append([invader_X[i] + invaderImage[i].get_width() // 2 - bulletImage.get_width() //2, invader_Y[i] + invaderImage[i].get_height()])
+                bx = invader_X[i] + invaderImage[i].get_width() // 2 - bulletImage.get_width() // 2
+                by = invader_Y[i] + invaderImage[i].get_height()
+
+                enemy_bullets.append([bx, by])                
                 print(f"enemy {i} fired")
+                if role == "P1":
+                    send_message(f"EBULLET {bx} {by}")
     
 def render_invaders():
     for i in range(no_of_invaders):
