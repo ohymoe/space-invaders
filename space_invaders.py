@@ -98,6 +98,13 @@ def remote_input():
                 player2_X - 16 + playerImage.get_width()//2 - bulletImage.get_width()//2,
                 player2_Y - bulletImage.get_height()
             ])
+        elif msg.startswith("ENEMY"):
+            _, idx, x, y, alive = msg.split()
+            idx = int(idx)
+            invader_X[idx] = int(x)
+            invader_Y[idx] = int(y)
+            invader_alive[idx] = bool(int(alive))
+
 
 
 def show_score(x, y):
@@ -387,7 +394,7 @@ def update_invaders():
 
     # movement of the invader
     for i in range(no_of_invaders):
-        
+        invader_X[i] += invader_Xchange[i]
         if invader_Y[i] >= 450:
             if abs(player_X-invader_X[i]) < 80:
                 for j in range(no_of_invaders):
@@ -410,6 +417,11 @@ def update_invaders():
             if random.randint(1,300) == 1:
                 enemy_bullets.append([invader_X[i] + invaderImage[i].get_width() // 2 - bulletImage.get_width() //2, invader_Y[i] + invaderImage[i].get_height()])
                 print(f"enemy {i} fired")
+    
+def render_invaders():
+    for i in range(no_of_invaders):
+        if invader_alive[i] and invader_Y[i] >= 0:
+            invader(invader_X[i], invader_Y[i], i)
 
 def update_shooting():
     global shooting, shoot_timer, current_shooter
@@ -559,6 +571,10 @@ def join_input():
 def join_lobby():
     clock = pg.time.Clock()
     while True:
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                sys.exit()
         screen.fill((0, 0, 0))
         title = title_font.render("JOIN LOBBY", True, (255,255,255))
 
@@ -597,12 +613,18 @@ def main_multiplayer():
         remote_input()         # remote input
         move_player()          # move local
         move_remote_player()   # move remote
-
         update_bullet(local_bullets)
         update_bullet(remote_bullets)
-        update_invaders()
+        if role == "P1":
+            update_invaders()     
+            update_enemy_bullets()
+            update_shooting()
+            for i in range(no_of_invaders):
+                send_message(f"ENEMY {i} {int(invader_X[i])} {int(invader_Y[i])} {int(invader_alive[i])}")
+    
+        else:
+            render_invaders()
         draw()
-
         pg.display.update()
 
 
@@ -612,6 +634,7 @@ if __name__ == "__main__":
     mode = start_menu()
 
     if mode == "solo":
+        role = "P1"
         won = main()
         if player_lives <= 0:
             game_over()
@@ -635,11 +658,11 @@ if __name__ == "__main__":
 
     if mode == "join":
         role = "P2"
-        ip = join_input()
+        # ip = join_input()
         # if ip:
         #     start_client(ip)
-        #     join_lobby()
         start_client("127.0.0.1")
+        join_lobby()
 
         main_multiplayer()
                 
