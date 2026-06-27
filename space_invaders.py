@@ -81,6 +81,25 @@ game_won_font = pg.font.Font('freesansbold.ttf', 64)
 title_font = pg.font.Font('freesansbold.ttf', 40)
 #subhead_font = pg.font.Font('freesansbold.ttf', 16)
 
+def remote_input():
+    global player2_Xchange
+
+    while incoming_messages:
+        msg = incoming_messages.pop(0)
+
+        if msg == "MOVE LEFT":
+            player2_Xchange = -player_speed
+        elif msg == "MOVE RIGHT":
+            player2_Xchange = player_speed
+        elif msg == "MOVE STOP":
+            player2_Xchange = 0
+        elif msg == "SHOOT":
+            remote_bullets.append([
+                player2_X - 16 + playerImage.get_width()//2 - bulletImage.get_width()//2,
+                player2_Y - bulletImage.get_height()
+            ])
+
+
 def show_score(x, y):
     score = font.render("Points: " + str(score_val),
                         True, (255,255,255))
@@ -186,13 +205,16 @@ for num in range(no_of_invaders):
 # Bullet
 # rest - bullet is not moving
 # fire - bullet is moving
+
+
+
 laser = pg.image.load(resource_path('data/laser.png'))
 bulletImage = scale_keep_aspect(laser, 65)
-bullet_X = 0
-bullet_Y = 500
+local_bullets = []
+remote_bullets = []
+bullet_speed = 3
 bullet_Xchange = 0
 bullet_Ychange = 3
-bullet_state = "rest"
 
 #enemy shooting 
 
@@ -279,14 +301,11 @@ def events():
                 player_Xchange = player_speed
                 send_message("MOVE RIGHT")
             if event.key == pg.K_SPACE:
-              
-                # Fixing the change of direction of bullet
-                if bullet_state == "rest":
-                    bullet_X = player_X - 16 + playerImage.get_width() // 2 - bulletImage.get_width() // 2
-                    bullet_Y = player_Y + 10 - bulletImage.get_height()
-                    bullet(bullet_X, bullet_Y)
-                    # bullet_sound = mixer.Sound('data/bullet.wav')
-                    # bullet_sound.play()
+                local_bullets.append([
+                    player_X - 16 + playerImage.get_width()//2 - bulletImage.get_width()//2,
+                    player_Y - bulletImage.get_height()
+                ])
+                send_message("SHOOT")
         if event.type == pg.KEYUP:
             player_Xchange = 0 
             send_message("MOVE STOP")
@@ -303,20 +322,18 @@ def move_player():
     elif player_X >= 750:
         player_X = 750
 
-def update_bullet():
-    global bullet_Y, bullet_state
+def move_remote_player():
+    global player2_X
+    player2_X += player2_Xchange
+    player2_X = max(16, min(750, player2_X))
+    
+def update_bullet(bullets):
+    for b in bullets[:]:
+        b[1] -= bullet_speed
+        screen.blit(bulletImage, (b[0], b[1]))
+        if b[1] < 0:
+            bullets.remove(b)
 
-    for i in range(no_of_invaders):
-        invader_X[i] += invader_Xchange[i]
-        
-    # bullet movement
-    if bullet_Y <= 0:
-        bullet_Y = 600
-        bullet_state = "rest"
-
-    if bullet_state == "fire":
-        bullet(bullet_X, bullet_Y)
-        bullet_Y -= bullet_Ychange
 
 def update_enemy_bullets():
     global player_lives, running, enemy_bullets
@@ -332,6 +349,20 @@ def update_enemy_bullets():
             print(f"player hit. Lives remaining: {player_lives}")
 
     enemy_bullets = [b for b in enemy_bullets if b[1] < 600]
+def check_hit_invader(bullets, inv_i):
+    global score_val
+
+    for b in bullets[:]:
+        if isCollision(b[0], invader_X[inv_i], b[1], invader_Y[inv_i]):
+            score_val += 1
+            bullets.remove(b)
+
+            invader_X[inv_i] = -200 # offscreen
+            invader_Y[inv_i] = -200
+            invader_Xchange[inv_i] = 0
+            invader_alive[inv_i] = False
+            return True   
+    return False
 
 def update_invaders():
     global score_val, bullet_Y, bullet_state, current_shooter, shooting, shoot_timer, enemy_bullets
@@ -350,19 +381,10 @@ def update_invaders():
             invader_Xchange[i] *= -1
             invader_Y[i] += invader_Ychange[i]
 
-    # Collision with player bullet
-        collision = isCollision(bullet_X, invader_X[i],
-                                bullet_Y, invader_Y[i])
-        if collision:
-            score_val += 1
-            bullet_Y = 600
-            bullet_state = "rest"
-            # keep the invader down so it doesn’t respawn
-            invader_X[i] = -200
-            invader_Y[i] = -200
-            invader_Xchange[i] = 0
-            invader_alive[i] = False
-
+        if check_hit_invader(local_bullets, i):
+            continue
+        if check_hit_invader(remote_bullets, i):
+            continue
         if invader_Y[i] >= 0:
             invader(invader_X[i], invader_Y[i], i)
         
@@ -401,16 +423,8 @@ def update_shooting():
 
 def draw():
     player(player_X, player_Y)
+    screen.blit(playerImage, (player2_X - 16, player2_Y + 10))
     show_score(scoreX, scoreY)
-    if role == "P1":
-        # draw P2
-        screen.blit(playerImage, (player2_X - 16, player2_Y + 10))
-    else:
-        # draw P1
-        screen.blit(playerImage, (player_X - 16, player_Y + 10))
-
-    
-
 
 def main():    
     global running
@@ -420,8 +434,11 @@ def main():
         screen.blit(game_bg, (0, 0))
 
         events()
+        remote_input()
+        move_remote_player()
         move_player()
-        update_bullet()
+        update_bullet(local_bullets)
+        update_bullet(remote_bullets)
         update_invaders()
         update_enemy_bullets()
         update_shooting()
@@ -557,14 +574,18 @@ def main_multiplayer():
     running = True
     while running:
         screen.blit(game_bg, (0, 0))
-        events()
-        move_player()
-        update_bullet()
+
+        events()               # local input
+        remote_input()         # remote input
+        move_player()          # move local
+        move_remote_player()   # move remote
+
+        update_bullet(local_bullets)
+        update_bullet(remote_bullets)
         update_invaders()
         draw()
+
         pg.display.update()
-        
-        
 
 
 
