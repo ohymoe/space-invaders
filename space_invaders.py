@@ -486,22 +486,22 @@ def update_shooting():
 
 def draw():
     player(player_X, player_Y)
-    screen.blit(playerImage, (player2_X - 16, player2_Y + 10))
+    if role == "P2" or role =="P1" and mode == "host":
+        screen.blit(playerImage, (player2_X - 16, player2_Y + 10))
     show_score(scoreX, scoreY)
 
 def main():    
     global running
     running = True
     won = False
+    remote_bullets.clear()
+    
     while running:
         screen.blit(game_bg, (0, 0))
 
         events()
-        remote_input()
-        move_remote_player()
         move_player()
         update_bullet(local_bullets)
-        update_bullet(remote_bullets)
         update_invaders()
         update_enemy_bullets()
         update_shooting()
@@ -515,6 +515,7 @@ def main():
         if all(not alive for alive in invader_alive):
             running = False
             won = True
+
     return won
         
 def get_local_ip():
