@@ -81,6 +81,37 @@ game_won_font = pg.font.Font('freesansbold.ttf', 64)
 title_font = pg.font.Font('freesansbold.ttf', 40)
 #subhead_font = pg.font.Font('freesansbold.ttf', 16)
 
+def init_globals():
+    global player_X, player_Y, player_Xchange, player2_X, player2_Y, player2_Xchange
+    global player_lives, score_val, running
+    global invader_X, invader_Y, invader_Xchange, invader_Ychange, invader_alive
+    global local_bullets, remote_bullets, enemy_bullets
+
+    # player positions
+    player_X = 370
+    player_Y = 470
+    player_Xchange = 0
+
+    # remote player position
+    player2_X = 370
+    player2_Y = 470
+    player2_Xchange = 0
+
+    player_lives = 3
+    score_val = 0
+    running = True 
+
+    local_bullets.clear()
+    remote_bullets.clear()
+    enemy_bullets.clear()
+
+    for i in range(no_of_invaders):
+        invader_X[i] = random.randint(64, 737)
+        invader_Y[i] = random.randint(30, 180)
+        invader_Xchange[i] = 0.2
+        invader_Ychange[i] = 25
+        invader_alive[i] = True
+
 def remote_input():
     global player2_Xchange, running, player_lives, score_val
 
@@ -210,17 +241,6 @@ class Player:
     def draw(self, screen):
         screen.blit(self.image, (self.x - 16, self.y + 10))
 
-# player positions
-player_X = 370
-player_Y = 470
-player_Xchange = 0
-player_speed = 1
-
-# remote player position
-player2_X = 370
-player2_Y = 470
-player2_Xchange = 0
-
 left_held = False
 right_held = False
 
@@ -240,11 +260,6 @@ for num in range(no_of_invaders):
     invader_Y.append(random.randint(30, 180))
     invader_Xchange.append(0.2)
     invader_Ychange.append(25)
-
-# Bullet
-# rest - bullet is not moving
-# fire - bullet is moving
-
 
 
 laser = pg.image.load(resource_path('data/laser.png'))
@@ -495,7 +510,7 @@ def main():
     running = True
     won = False
     remote_bullets.clear()
-    
+
     while running:
         screen.blit(game_bg, (0, 0))
 
@@ -680,31 +695,28 @@ def main_multiplayer():
 
 
 if __name__ == "__main__":
-    mode = start_menu()
+    while True:
+        mode = start_menu()
+        init_globals()
+        if mode == "solo":
+            role = "P1"
+            won = main()
+            if player_lives <= 0:
+                game_over()
+            elif won:
+                game_won()
 
-    if mode == "solo":
-        role = "P1"
-        won = main()
-        if player_lives <= 0:
-            game_over()
-        elif won:
-            game_won()
-
-    if mode == "host":
-        # runs solo for now, will add multiplayer later
-        role = "P1"
-        start_client("127.0.0.1")
-        host_lobby()
-        main_multiplayer()
-        
-    if mode == "join":
-        role = "P2"
-        # ip = join_input()
-        # if ip:
-        #     start_client(ip)
-        start_client("127.0.0.1")
-        join_lobby()
-
-        main_multiplayer()
-
-    mode = start_menu()
+        if mode == "host":
+            role = "P1"
+            start_client("127.0.0.1")
+            host_lobby()
+            main_multiplayer()
+            
+        if mode == "join":
+            role = "P2"
+            # ip = join_input()
+            # if ip:
+            #     start_client(ip)
+            start_client("127.0.0.1") # for testing
+            join_lobby()
+            main_multiplayer()
