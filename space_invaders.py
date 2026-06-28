@@ -66,10 +66,7 @@ screen = pg.display.set_mode((screen_width,
 # caption and icon
 pg.display.set_caption("space invaders....")
 
-player_lives = 3  
-
-# Score
-score_val = 0
+player_speed = 1
 scoreX = 5
 scoreY = 5
 font = pg.font.Font('freesansbold.ttf', 20)
@@ -83,8 +80,8 @@ title_font = pg.font.Font('freesansbold.ttf', 40)
 
 def init_globals():
     global player_X, player_Y, player_Xchange, player2_X, player2_Y, player2_Xchange
-    global player_lives, score_val, running
-    global invader_X, invader_Y, invader_Xchange, invader_Ychange, invader_alive
+    global player_lives, score_val, running, incoming_messages
+    global invader_X, invader_Y, invader_alive
     global local_bullets, remote_bullets, enemy_bullets
 
     # player positions
@@ -101,9 +98,11 @@ def init_globals():
     score_val = 0
     running = True 
 
-    local_bullets.clear()
-    remote_bullets.clear()
-    enemy_bullets.clear()
+    incoming_messages = []
+
+    local_bullets = []
+    remote_bullets = []
+    enemy_bullets = []
 
     for i in range(no_of_invaders):
         invader_X[i] = random.randint(64, 737)
@@ -113,7 +112,7 @@ def init_globals():
         invader_alive[i] = True
 
 def remote_input():
-    global player2_Xchange, running, player_lives, score_val
+    global player2_Xchange, running, player_lives, score_val, player_speed
 
     while incoming_messages:
         msg = incoming_messages.pop(0)
@@ -151,7 +150,6 @@ def remote_input():
         elif msg.startswith("SCORE"):
             _, val = msg.split()
             score_val = int(val)
-
 
 
 def show_score(x, y):
@@ -251,26 +249,25 @@ invader_X = []
 invader_Y = []
 invader_Xchange = []
 invader_Ychange = []
+invader_alive = []
 no_of_invaders = 8
-invader_alive = [True] * no_of_invaders
 
 for num in range(no_of_invaders):
     invaderImage.append(pg.image.load(resource_path('data/dalek.png')))
-    invader_X.append(random.randint(64, 737))
-    invader_Y.append(random.randint(30, 180))
-    invader_Xchange.append(0.2)
-    invader_Ychange.append(25)
+    invader_X.append(0)
+    invader_Y.append(0)
+    invader_Xchange.append(0)
+    invader_Ychange.append(0)
+    invader_alive.append(True)
 
-
+# bullets
 laser = pg.image.load(resource_path('data/laser.png'))
 bulletImage = scale_keep_aspect(laser, 65)
-local_bullets = []
-remote_bullets = []
 bullet_speed = 3
 bullet_Xchange = 0
 bullet_Ychange = 3
-
-#enemy shooting 
+# enemy bullets 
+enemy_bullet_speed = 1
 
 # shooting system 
 shooting = False 
@@ -278,11 +275,6 @@ shoot_timer = 0
 shoot_duration = 1500
 shoot_cooldown = 3000
 current_shooter = None
-
-
-# enemy bullets 
-enemy_bullets = []
-enemy_bullet_speed = 1
 
 
 # Collision Concept
