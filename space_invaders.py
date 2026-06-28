@@ -82,7 +82,7 @@ title_font = pg.font.Font('freesansbold.ttf', 40)
 #subhead_font = pg.font.Font('freesansbold.ttf', 16)
 
 def remote_input():
-    global player2_Xchange
+    global player2_Xchange, running, player_lives, score_val
 
     while incoming_messages:
         msg = incoming_messages.pop(0)
@@ -107,7 +107,19 @@ def remote_input():
         elif msg.startswith("EBULLET"):
             _, x, y = msg.split()
             enemy_bullets.append([float(x), float(y)])
-
+        elif msg.startswith("LIVES"):
+            _, val = msg.split()
+            player_lives = int(val)
+        
+        elif msg == "GAME OVER":
+            game_over()
+            running = False
+        elif msg == "GAME WON":
+            game_won()
+            running = False
+        elif msg.startswith("SCORE"):
+            _, val = msg.split()
+            score_val = int(val)
 
 
 
@@ -365,12 +377,14 @@ def update_enemy_bullets():
         b[1] += enemy_bullet_speed
         enemy_bullet(b[0], b[1])
     
-        player_hit = isCollision(b[0], player_X, b[1], player_Y)
+        player1_hit = isCollision(b[0], player_X, b[1], player_Y)
+        player2_hit = isCollision(b[0], player2_X, b[1], player2_Y)
         
-        if player_hit:
+        if player1_hit or player2_hit:
             player_lives -= 1
             enemy_bullets.remove(b)
-            print(f"player hit. Lives remaining: {player_lives}")
+        if role == "P1":
+            send_message(f"LIVES {player_lives}")
 
     enemy_bullets = [b for b in enemy_bullets if b[1] < 600]
 def check_hit_invader(bullets, inv_i):
@@ -379,6 +393,10 @@ def check_hit_invader(bullets, inv_i):
     for b in bullets[:]:
         if isCollision(b[0], invader_X[inv_i], b[1], invader_Y[inv_i]):
             score_val += 1
+
+            if role == "P1":
+                send_message(f"SCORE {score_val}")
+
             bullets.remove(b)
 
             invader_X[inv_i] = -200 # offscreen
@@ -619,16 +637,30 @@ def main_multiplayer():
         move_remote_player()   # move remote
         update_bullet(local_bullets)
         update_bullet(remote_bullets)
+
         if role == "P1":
             update_invaders()     
             update_enemy_bullets()
             update_shooting()
+
+        #sync enemy positions 
             for i in range(no_of_invaders):
                 send_message(f"ENEMY {i} {int(invader_X[i])} {int(invader_Y[i])} {int(invader_alive[i])}")
+
+            if player_lives <= 0:
+                running = False
+                send_message("GAME OVER")
+                game_over()
+
+            if all(not alive for alive in invader_alive):
+                send_message("GAME WON")
+                running = False
+                game_won()
     
         else:
             render_invaders()
             update_enemy_bullets()
+
         draw()
         pg.display.update()
 
