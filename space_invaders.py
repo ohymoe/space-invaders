@@ -133,19 +133,24 @@ def show_score(x, y):
 
 def game_over():
     screen.fill((0, 0, 0))
-    game_over_text = game_over_font.render("GAME OVER",
-                                           True, (255,255,255))
+    game_over_text = game_over_font.render("GAME OVER", True, (255,255,255))
     screen.blit(game_over_text, (190, 250))
 
-    score_text = font.render("Final Score: " + str(score_val),
-                             True, (255,255,255))
+    score_text = font.render("Final Score: " + str(score_val), True, (255,255,255))
     screen.blit(score_text, (320, 350))
+
+    prompt = font.render("Press ENTER to return to menu", True, (255,255,255))
+    screen.blit(prompt, (240, 450))
+
     pg.display.update()
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT:
-                return False
-
+                pg.quit()
+                sys.exit()
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_RETURN:
+                    return False
 def game_won():
     screen.fill((0, 0, 0))
 
@@ -154,13 +159,19 @@ def game_won():
     screen.blit(game_won_text, (240, 200))
     screen.blit(subhead, ( 235, 300))
 
+    prompt = font.render("Press ENTER to return to menu", True, (255,255,255))
+    screen.blit(prompt, (240, 450))
+
     pg.display.update()
 
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT:
-                return False
-
+                pg.quit()
+                sys.exit()
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_RETURN:
+                    return False
 
 
 # AI written
@@ -677,7 +688,6 @@ if __name__ == "__main__":
             game_over()
         elif won:
             game_won()
-        pg.quit()
 
     if mode == "host":
         # runs solo for now, will add multiplayer later
@@ -685,14 +695,7 @@ if __name__ == "__main__":
         start_client("127.0.0.1")
         host_lobby()
         main_multiplayer()
-
-        # won = main()
-        # if player_lives <= 0:
-        #     game_over()
-        # elif won:
-        #     game_won()
-        pg.quit()
-
+        
     if mode == "join":
         role = "P2"
         # ip = join_input()
@@ -702,9 +705,5 @@ if __name__ == "__main__":
         join_lobby()
 
         main_multiplayer()
-                
-                # if player_lives <= 0:
-                #     game_over()
-                # elif won:
-                #     game_won()
-        pg.quit()        
+
+    mode = start_menu()
