@@ -56,6 +56,78 @@ def resource_path(relative_path):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(relative_path)
 
+# AI written i got lazy 
+def scale_keep_aspect(image, target_width):
+    # Calculate the ratio
+    ratio = target_width / image.get_width()
+    target_height = int(image.get_height() * ratio)
+    return pg.transform.smoothscale(image, (target_width, target_height))
+
+# bg images
+start_bg = pg.image.load(resource_path("data/start_screen.png"))
+bg = pg.image.load(resource_path("data/background.png"))
+game_bg = scale_keep_aspect(bg, 910).convert()
+
+# player
+tardis = pg.image.load(resource_path('data/tardis.png'))
+playerImage = scale_keep_aspect(tardis, 60)
+
+class Player:
+    def __init__(self, x, y, image):
+        self.x = x
+        self.y = y
+        self.speed = 1
+        self.xchange = 0
+        self.lives = 3
+        self.image = image
+
+    def move(self):
+        self.x += self.xchange
+        self.x = max(16, min(750, self.x))
+
+    def draw(self, screen):
+        screen.blit(self.image, (self.x - 16, self.y + 10))
+
+
+left_held = False
+right_held = False
+
+
+# Invader
+invaderImage = []
+invader_X = []
+invader_Y = []
+invader_Xchange = []
+invader_Ychange = []
+invader_alive = []
+no_of_invaders = 8
+
+for num in range(no_of_invaders):
+    invaderImage.append(pg.image.load(resource_path('data/dalek.png')))
+    invader_X.append(0)
+    invader_Y.append(0)
+    invader_Xchange.append(0)
+    invader_Ychange.append(0)
+    invader_alive.append(True)
+
+# bullets
+laser = pg.image.load(resource_path('data/laser.png'))
+bulletImage = scale_keep_aspect(laser, 65)
+bullet_speed = 3
+bullet_Xchange = 0
+bullet_Ychange = 3
+# enemy bullets 
+enemy_bullet_speed = 1
+
+# shooting system 
+shooting = False 
+shoot_timer = 0
+shoot_duration = 1500
+shoot_cooldown = 3000
+current_shooter = None
+
+
+
 
 # creating screen
 screen_width = 800
@@ -80,9 +152,11 @@ title_font = pg.font.Font('freesansbold.ttf', 40)
 
 def init_globals():
     global player_X, player_Y, player_Xchange, player2_X, player2_Y, player2_Xchange
-    global player_lives, score_val, running, incoming_messages
+    global player_lives, score_val, running
     global invader_X, invader_Y, invader_alive
     global local_bullets, remote_bullets, enemy_bullets
+    global sock, role, shooting, shoot_timer, current_shooter 
+
 
     # player positions
     player_X = 370
@@ -98,11 +172,11 @@ def init_globals():
     score_val = 0
     running = True 
 
-    incoming_messages = []
+    role = None
 
-    local_bullets = []
-    remote_bullets = []
-    enemy_bullets = []
+    local_bullets.clear()
+    remote_bullets.clear()
+    enemy_bullets.clear()
 
     for i in range(no_of_invaders):
         invader_X[i] = random.randint(64, 737)
@@ -202,79 +276,6 @@ def game_won():
                 if event.key == pg.K_RETURN:
                     return False
 
-
-# AI written
-def scale_keep_aspect(image, target_width):
-    # Calculate the ratio
-    ratio = target_width / image.get_width()
-    target_height = int(image.get_height() * ratio)
-    return pg.transform.smoothscale(image, (target_width, target_height))
-
-# Background Sound
-#mixer.music.load('data/background.wav')
-#mixer.music.play(-1)
-
-# bg images
-start_bg = pg.image.load(resource_path("data/start_screen.png"))
-bg = pg.image.load(resource_path("data/background.png"))
-game_bg = scale_keep_aspect(bg, 910).convert()
-
-# player
-tardis = pg.image.load(resource_path('data/tardis.png'))
-playerImage = scale_keep_aspect(tardis, 60)
-
-class Player:
-    def __init__(self, x, y, image):
-        self.x = x
-        self.y = y
-        self.speed = 1
-        self.xchange = 0
-        self.lives = 3
-        self.image = image
-
-    def move(self):
-        self.x += self.xchange
-        self.x = max(16, min(750, self.x))
-
-    def draw(self, screen):
-        screen.blit(self.image, (self.x - 16, self.y + 10))
-
-left_held = False
-right_held = False
-
-
-# Invader
-invaderImage = []
-invader_X = []
-invader_Y = []
-invader_Xchange = []
-invader_Ychange = []
-invader_alive = []
-no_of_invaders = 8
-
-for num in range(no_of_invaders):
-    invaderImage.append(pg.image.load(resource_path('data/dalek.png')))
-    invader_X.append(0)
-    invader_Y.append(0)
-    invader_Xchange.append(0)
-    invader_Ychange.append(0)
-    invader_alive.append(True)
-
-# bullets
-laser = pg.image.load(resource_path('data/laser.png'))
-bulletImage = scale_keep_aspect(laser, 65)
-bullet_speed = 3
-bullet_Xchange = 0
-bullet_Ychange = 3
-# enemy bullets 
-enemy_bullet_speed = 1
-
-# shooting system 
-shooting = False 
-shoot_timer = 0
-shoot_duration = 1500
-shoot_cooldown = 3000
-current_shooter = None
 
 
 # Collision Concept
@@ -493,7 +494,7 @@ def update_shooting():
 
 def draw():
     player(player_X, player_Y)
-    if role == "P2" or role =="P1" and mode == "host":
+    if role == "P2" or (role =="P1" and mode == "host"):
         screen.blit(playerImage, (player2_X - 16, player2_Y + 10))
     show_score(scoreX, scoreY)
 
