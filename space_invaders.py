@@ -299,7 +299,6 @@ def start_menu():
                 if event.key == pg.K_j:
                     return "join"
 
-
 def events():
     global running, left_held, right_held, player_Xchange
 
@@ -334,7 +333,6 @@ def events():
     else:
         player_Xchange = 0
         send_message("MOVE STOP")
-
 
 def move_player():
     global player_X
@@ -630,6 +628,7 @@ def main_multiplayer():
     
         else:
             render_invaders()
+            update_enemy_bullets()
         draw()
         pg.display.update()
 
