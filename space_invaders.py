@@ -13,6 +13,12 @@ incoming_messages = []
 role = None
 lobby_state = None
 
+# creating screen
+screen_width = 800
+screen_height = 600
+screen = pg.display.set_mode((screen_width,
+                                  screen_height))
+
 
 # listeneer thread 
 def listen_for_messages(s):
@@ -118,6 +124,9 @@ bullet_Xchange = 0
 bullet_Ychange = 3
 # enemy bullets 
 enemy_bullet_speed = 1
+local_bullets = []
+remote_bullets = []
+enemy_bullets = []
 
 # shooting system 
 shooting = False 
@@ -128,12 +137,6 @@ current_shooter = None
 
 
 
-
-# creating screen
-screen_width = 800
-screen_height = 600
-screen = pg.display.set_mode((screen_width,
-                                  screen_height))
 
 # caption and icon
 pg.display.set_caption("space invaders....")
@@ -155,8 +158,16 @@ def init_globals():
     global player_lives, score_val, running
     global invader_X, invader_Y, invader_alive
     global local_bullets, remote_bullets, enemy_bullets
-    global sock, role, shooting, shoot_timer, current_shooter 
+    global role, shooting, shoot_timer, current_shooter 
+    global left_held, right_held
 
+    global sock
+    if sock:
+        try:
+            sock.close()
+        except:
+            pass
+    sock = None
 
     # player positions
     player_X = 370
@@ -168,12 +179,15 @@ def init_globals():
     player2_Y = 470
     player2_Xchange = 0
 
+    left_held = False
+    right_held = False
+
     player_lives = 3
     score_val = 0
     running = True 
 
     role = None
-
+    incoming_messages.clear()
     local_bullets.clear()
     remote_bullets.clear()
     enemy_bullets.clear()
@@ -185,12 +199,17 @@ def init_globals():
         invader_Ychange[i] = 25
         invader_alive[i] = True
 
+    shooting = False
+    shoot_timer = 0
+    current_shooter = None
+
 def remote_input():
-    global player2_Xchange, running, player_lives, score_val, player_speed
+    global player2_Xchange, running, player_lives, score_val, player_speed, role
 
     while incoming_messages:
         msg = incoming_messages.pop(0)
-
+        if msg.startswith("ROLE:"):
+            _, role = msg.split()
         if msg == "MOVE LEFT":
             player2_Xchange = -player_speed
         elif msg == "MOVE RIGHT":
@@ -224,6 +243,7 @@ def remote_input():
         elif msg.startswith("SCORE"):
             _, val = msg.split()
             score_val = int(val)
+        
 
 
 def show_score(x, y):
@@ -575,6 +595,16 @@ def host_lobby():
             msg = incoming_messages.pop(0)
             if msg == "JOINED":
                 player_joined = True
+
+def run_server():
+    import subprocess
+    try:
+        # 'sys.executable' points to the Python version you are running
+        subprocess.Popen([sys.executable, "server.py"])
+        print("Server started automatically!")
+    except Exception as e:
+        print(f"Failed to start server automatically: {e}")
+        
             
 def join_input():
 

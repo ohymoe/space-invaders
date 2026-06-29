@@ -17,11 +17,30 @@ def broadcast(message, source = None): #send msg to all clients
             except OSError:
                 clients.remove(client)
                 
+player_slots = {}
+
 def handle_client(client, address): # listens for messages from 1 client
-    reader = client.makefile("r", encoding="utf-8") 
-    for line in reader:
-        msg = line.rstrip("\n")
-        broadcast(msg, source=client)
+    global player_slots
+    try:
+        if len(player_slots) == 0:
+            role = "P1"
+        elif len(player_slots) == 1:
+            role = "P2"
+        player_slots[client] = role
+        send_message(client, f"ROLE:{role}")
+
+        reader = client.makefile("r", encoding="utf-8") 
+        for line in reader:
+            msg = line.rstrip("\n")
+            if not msg:
+                break
+            broadcast(msg, source=client)
+    except (OSError, Exception):
+        pass
+    finally:
+        if client in clients: # clear client list when disconnected
+            clients.remove(client)
+        client.close()
 
 def accept_clients(server):
     while True:
