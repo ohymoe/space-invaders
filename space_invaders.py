@@ -3,9 +3,11 @@ import pygame as pg
 import random
 import math
 from pygame import mixer
-
+import os, sys
 import socket
 import threading
+
+pg.init()
 
 PORT = 5050
 sock = None
@@ -42,7 +44,8 @@ def start_client(host_ip):
     thread.start()
 
 def send_message(msg: str):
-    global sock
+    global sock, role
+    
     if sock is None:
         return
     try:
@@ -51,11 +54,6 @@ def send_message(msg: str):
         pass
 
 
-# initializing pygame
-#helllo
-pg.init()
-
-import os, sys
 
 def resource_path(relative_path):
     if hasattr(sys, "_MEIPASS"):
@@ -559,47 +557,45 @@ def get_local_ip():
 
 def host_lobby():
     player_joined = False
-    global lobby_state
+    global lobby_state, role
     local_ip = get_local_ip()
     clock = pg.time.Clock()
 
     while True:
+        screen.fill((0, 0, 0))
+        ip_text = font.render(f"Your IP: {local_ip}", True, (255,255,255))
+        screen.blit(ip_text, (20, 180))
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                sys.exit()
+            if event.type == pg.KEYDOWN and player_joined:
+                if event.key == pg.K_RETURN:
+                    send_message("START")
+                    return
 
         if player_joined:
             info1 = font.render("Players ready!", True, (255,255,255))
             info2 = font.render("ENTER to start", True, (255,255,255))
             screen.blit(info2, (20, 260))
-            for event in pg.event.get():
-                if event.type == pg.QUIT:
-                    pg.quit()
-                    sys.exit()
-                if event.type == pg.KEYDOWN:
-                    if event.key == pg.K_RETURN:
-                        send_message("START")
-                        return
-
-
         else:
             info1 = font.render("Waiting for other player...", True, (255,255,255))
 
-        screen.fill((0, 0, 0))
-
-        ip_text = font.render(f"Your IP: {local_ip}", True, (255,255,255))
-
         screen.blit(info1, (20, 220))
-        screen.blit(ip_text, (20, 180))
         pg.display.update()
                 
-        # check for JOINED message 
         while incoming_messages:
             msg = incoming_messages.pop(0)
-            if msg == "JOINED":
+            if msg.startswith("ROLE:"):
+                _, role = msg.split(":")
+            elif msg == "JOINED":
                 player_joined = True
+
+        clock.tick(30)
 
 def run_server():
     import subprocess
     try:
-        # 'sys.executable' points to the Python version you are running
         subprocess.Popen([sys.executable, "server.py"])
         print("Server started automatically!")
     except Exception as e:
@@ -641,6 +637,7 @@ def join_input():
 
 
 def join_lobby():
+    global role
     clock = pg.time.Clock()
     while True:
         for event in pg.event.get():
@@ -650,12 +647,6 @@ def join_lobby():
         screen.fill((0, 0, 0))
         title = title_font.render("JOIN LOBBY", True, (255,255,255))
 
-        if lobby_state:
-            players = lobby_state["players"]
-            max_players = lobby_state["max_players"]
-        else:
-            players = 1
-            max_players = 2
 
         # players_text = font.render(f"Players connected: {players}/{max_players}", True, (255,255,255))
 
@@ -669,9 +660,10 @@ def join_lobby():
 
         while incoming_messages:
             msg = incoming_messages.pop(0)
-            if msg == "START":
+            if msg.startswith("ROLE:"):
+                _, role = msg.split(":")
+            elif msg == "START":
                 return True
-
         clock.tick(30)
 
 
@@ -731,6 +723,9 @@ if __name__ == "__main__":
 
         if mode == "host":
             role = "P1"
+            run_server() # start server in background
+            import time
+            time.sleep(0.4)
             start_client("127.0.0.1")
             host_lobby()
             main_multiplayer()

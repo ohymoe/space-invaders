@@ -5,6 +5,7 @@ import threading
 
 PORT = 5050
 clients = [] # list of connected players' sockets
+player_slots = {}
 
 def send_message(sock, message):
     sock.sendall((message + "\n").encode("utf-8")) #send message to one client: string -> bytes
@@ -17,7 +18,6 @@ def broadcast(message, source = None): #send msg to all clients
             except OSError:
                 clients.remove(client)
                 
-player_slots = {}
 
 def handle_client(client, address): # listens for messages from 1 client
     global player_slots
@@ -40,6 +40,8 @@ def handle_client(client, address): # listens for messages from 1 client
     finally:
         if client in clients: # clear client list when disconnected
             clients.remove(client)
+        if client in player_slots:
+            del player_slots[client]
         client.close()
 
 def accept_clients(server):
