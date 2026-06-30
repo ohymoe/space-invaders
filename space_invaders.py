@@ -125,6 +125,8 @@ def host_lobby():
     local_ip = get_local_ip()
     clock = pg.time.Clock()
 
+    incoming_messages.clear()
+
     while True:
         screen.fill((0, 0, 0))
         screen.blit(font.render(f"Your IP: {local_ip}", True, (255,255,255)), (20,180))
@@ -157,6 +159,9 @@ def host_lobby():
 def join_lobby():
     global role
     clock = pg.time.Clock()
+
+    incoming_messages.clear()
+
     while True:
         while incoming_messages:
             msg = incoming_messages.pop(0)
@@ -538,8 +543,9 @@ def render_invaders():
             invader(invader_X[i], invader_Y[i], i)
 
 def draw():
-    player(player_X, player_Y)
-    screen.blit(playerImage, (player2_X - 16, player2_Y + 10))
+    player(player_X, player_Y)    
+    if mode in ("host", "join"):
+        screen.blit(playerImage, (player2_X - 16, player2_Y + 10))
     show_score(scoreX, scoreY)
 
 # --- MAIN GAME LOOP ----
@@ -549,6 +555,7 @@ def main():
     running = True
     won = False
     remote_bullets.clear()
+    clock = pg.time.Clock()
 
     while running:
         screen.blit(game_bg, (0, 0))
@@ -562,6 +569,7 @@ def main():
         draw()
 
         pg.display.update()
+        clock.tick(250)
 
         if player_lives <= 0:
             running = False 
@@ -575,6 +583,7 @@ def main():
 def main_multiplayer():
     global running
     running = True
+    clock = pg.time.Clock()
     while running:
         screen.blit(game_bg, (0, 0))
 
@@ -610,6 +619,8 @@ def main_multiplayer():
 
         draw()
         pg.display.update()
+        clock.tick(250)
+
 
 
 
