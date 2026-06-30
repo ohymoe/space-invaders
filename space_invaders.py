@@ -2,27 +2,67 @@
 import pygame as pg
 import random
 import math
-from pygame import mixer
 import os, sys
 import socket
 import threading
 
 pg.init()
 
+# --- GLOBALS ---- ┌( ಠ_ಠ)┘
 PORT = 5050
 sock = None
 incoming_messages = []
 role = None
-lobby_state = None
+mode = None
 
 # creating screen
 screen_width = 800
 screen_height = 600
-screen = pg.display.set_mode((screen_width,
-                                  screen_height))
+screen = pg.display.set_mode((screen_width, screen_height))
+pg.display.set_caption("tardis invaders")
 
+player_speed = 1
+bullet_speed = 3
+enemy_bullet_speed = 1
 
-# listeneer thread 
+left_held = False 
+right_held = False
+
+# ----ASSET HELPER FUNCTIONS----
+def resource_path(relative_path):
+    if hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(relative_path)
+
+def scale_keep_aspect(image, target_width):
+    # Calculate the ratio
+    ratio = target_width / image.get_width()
+    target_height = int(image.get_height() * ratio)
+    return pg.transform.smoothscale(image, (target_width, target_height))
+
+# ---ASSETS----
+
+start_bg = pg.image.load(resource_path("data/start_screen.png"))
+bg = pg.image.load(resource_path("data/background.png"))
+game_bg = scale_keep_aspect(bg, 910).convert()
+
+tardis = pg.image.load(resource_path('data/tardis.png'))
+laser = pg.image.load(resource_path('data/laser.png'))
+playerImage = scale_keep_aspect(tardis, 60)
+bulletImage = scale_keep_aspect(laser, 65)
+
+# ---- FONTS ---- 
+scoreX = 5
+scoreY = 5
+
+font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 20)
+game_over_font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 50)
+game_won_font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 50)
+title_font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 40)
+subhead_font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 16)
+
+# ---- NETWORKING -----
+
 def listen_for_messages(s):
     global incoming_messages
     try:
@@ -44,53 +84,91 @@ def start_client(host_ip):
     thread.start()
 
 def send_message(msg: str):
-    global sock, role
-    
-    if sock is None:
-        return
+    global sock    
+    if sock:
+        try:
+            sock.sendall((msg + "\n").encode("utf-8"))
+        except OSError:
+            pass
+
+# --- LOBBIES ----
+def get_local_ip():
     try:
-        sock.sendall((msg + "\n").encode("utf-8"))
-    except OSError:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except:
+        return "127.0.0.1"
+
+def run_server():
+    import subprocess
+    try:
+        subprocess.Popen([sys.executable, "server.py"])
+    except:
         pass
 
+def host_lobby():
+    player_joined = False
+    local_ip = get_local_ip()
+    clock = pg.time.Clock()
 
+    while True:
+        screen.fill((0, 0, 0))
+        screen.blit(font.render(f"Your IP: {local_ip}", True, (255,255,255)), (20,180))
 
-def resource_path(relative_path):
-    if hasattr(sys, "_MEIPASS"):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(relative_path)
+        while incoming_messages:
+            msg = incoming_messages.pop(0)
+            if msg.startswith("ROLE:"):
+                _, role = msg.split(":")
+            elif msg == "JOINED":
+                player_joined = True
 
-# AI written i got lazy 
-def scale_keep_aspect(image, target_width):
-    # Calculate the ratio
-    ratio = target_width / image.get_width()
-    target_height = int(image.get_height() * ratio)
-    return pg.transform.smoothscale(image, (target_width, target_height))
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                sys.exit()
+            if event.type == pg.KEYDOWN and player_joined:
+                if event.key == pg.K_RETURN:
+                    send_message("START")
+                    return
+                
+        if player_joined:
+            info1 = font.render("Players ready!", True, (255,255,255))
+            info2 = font.render("ENTER to start", True, (255,255,255))
+            screen.blit(info2, (20, 260))
+        else:
+            info1 = font.render("Waiting for other player...", True, (255,255,255))
 
-# bg images
-start_bg = pg.image.load(resource_path("data/start_screen.png"))
-bg = pg.image.load(resource_path("data/background.png"))
-game_bg = scale_keep_aspect(bg, 910).convert()
+        screen.blit(info1, (20, 220))
+        pg.display.update()            
+        clock.tick(30)
 
-# player
-tardis = pg.image.load(resource_path('data/tardis.png'))
-playerImage = scale_keep_aspect(tardis, 60)
+def join_lobby():
+    global role
+    clock = pg.time.Clock()
+    while True:
+        while incoming_messages:
+            msg = incoming_messages.pop(0)
+            if msg.startswith("ROLE:"):
+                _, role = msg.split(":")
+            elif msg == "START":
+                return True
+    
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                sys.exit()
 
-class Player:
-    def __init__(self, x, y, image):
-        self.x = x
-        self.y = y
-        self.speed = 1
-        self.xchange = 0
-        self.lives = 3
-        self.image = image
+        screen.fill((0, 0, 0))
+        title = title_font.render("JOIN LOBBY", True, (255,255,255))
+        info1 = font.render("Waiting for host to start... chop chop", True, (255,255,255))
 
-    def move(self):
-        self.x += self.xchange
-        self.x = max(16, min(750, self.x))
-
-    def draw(self, screen):
-        screen.blit(self.image, (self.x - 16, self.y + 10))
+        screen.blit(title, (20, 150))
+        screen.blit(info1, (20, 260))
+        pg.display.update()
+        clock.tick(30)
 
 
 left_held = False
@@ -115,11 +193,7 @@ for num in range(no_of_invaders):
     invader_alive.append(True)
 
 # bullets
-laser = pg.image.load(resource_path('data/laser.png'))
-bulletImage = scale_keep_aspect(laser, 65)
 bullet_speed = 3
-bullet_Xchange = 0
-bullet_Ychange = 3
 # enemy bullets 
 enemy_bullet_speed = 1
 local_bullets = []
@@ -136,20 +210,6 @@ current_shooter = None
 
 
 
-# caption and icon
-pg.display.set_caption("space invaders....")
-
-player_speed = 1
-scoreX = 5
-scoreY = 5
-font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 20)
-
-
-# Game Over
-game_over_font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 64)
-game_won_font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 64)
-title_font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 40)
-#subhead_font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 16)
 
 def init_globals():
     global player_X, player_Y, player_Xchange, player2_X, player2_Y, player2_Xchange
@@ -254,14 +314,15 @@ def show_score(x, y):
 
 def game_over():
     screen.fill((0, 0, 0))
+
     game_over_text = game_over_font.render("GAME OVER", True, (255,255,255))
-    screen.blit(game_over_text, (210, 250))
+    screen.blit(game_over_text, (180, 200))
 
     score_text = font.render("Final Score: " + str(score_val), True, (255,255,255))
-    screen.blit(score_text, (340, 350))
+    screen.blit(score_text, (250, 300))
 
     prompt = font.render("Press ENTER to return to menu", True, (255,255,255))
-    screen.blit(prompt, (260, 450))
+    screen.blit(prompt, (125, 450))
 
     pg.display.update()
     while True:
@@ -276,12 +337,12 @@ def game_won():
     screen.fill((0, 0, 0))
 
     game_won_text = game_won_font.render("congrats!", True, (255,255,255))
-    subhead = font.render("you've commited a mass murder.", True, (255,255,255))
-    screen.blit(game_won_text, (240, 200))
-    screen.blit(subhead, ( 235, 300))
+    subhead = subhead_font.render("you've commited a mass murder.", True, (255,255,255))
+    screen.blit(game_won_text, (170, 200))
+    screen.blit(subhead, (160, 300))
 
     prompt = font.render("Press ENTER to return to menu", True, (255,255,255))
-    screen.blit(prompt, (240, 450))
+    screen.blit(prompt, (125, 450))
 
     pg.display.update()
 
@@ -310,11 +371,6 @@ def player(x, y):
 
 def invader(x, y, i):
     screen.blit(invaderImage[i], (x, y))
-
-def bullet(x, y):
-    global bullet_state
-    screen.blit(bulletImage, (x, y))
-    bullet_state = "fire"
 
 def enemy_bullet(x, y):
     screen.blit(bulletImage, (x, y))
@@ -444,7 +500,7 @@ def check_hit_invader(bullets, inv_i):
     return False
 
 def update_invaders():
-    global score_val, bullet_Y, bullet_state, current_shooter, shooting, shoot_timer, enemy_bullets
+    global score_val, bullet_Y, current_shooter, shooting, shoot_timer, enemy_bullets
 
     # movement of the invader
     for i in range(no_of_invaders):
@@ -512,7 +568,7 @@ def update_shooting():
 
 def draw():
     player(player_X, player_Y)
-    if role == "P2" or (role =="P1" and mode == "host"):
+    if role == "P2":
         screen.blit(playerImage, (player2_X - 16, player2_Y + 10))
     show_score(scoreX, scoreY)
 
@@ -544,65 +600,10 @@ def main():
 
     return won
         
-def get_local_ip():
-    try:
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
-        s.close()
-        return ip
-    except:
-        return "127.0.0.1"
 
 
-def host_lobby():
-    player_joined = False
-    global lobby_state, role
-    local_ip = get_local_ip()
-    clock = pg.time.Clock()
-
-    while True:
-        screen.fill((0, 0, 0))
-        ip_text = font.render(f"Your IP: {local_ip}", True, (255,255,255))
-        screen.blit(ip_text, (20, 180))
-
-        while incoming_messages:
-            msg = incoming_messages.pop(0)
-            if msg.startswith("ROLE:"):
-                _, role = msg.split(":")
-            elif msg == "JOINED":
-                player_joined = True
 
 
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                pg.quit()
-                sys.exit()
-            if event.type == pg.KEYDOWN and player_joined:
-                if event.key == pg.K_RETURN:
-                    send_message("START")
-                    return
-
-        if player_joined:
-            info1 = font.render("Players ready!", True, (255,255,255))
-            info2 = font.render("ENTER to start", True, (255,255,255))
-            screen.blit(info2, (20, 260))
-        else:
-            info1 = font.render("Waiting for other player...", True, (255,255,255))
-
-        screen.blit(info1, (20, 220))
-        pg.display.update()
-                
-
-        clock.tick(30)
-
-def run_server():
-    import subprocess
-    try:
-        subprocess.Popen([sys.executable, "server.py"])
-        print("Server started automatically!")
-    except Exception as e:
-        print(f"Failed to start server automatically: {e}")
         
             
 def join_input():
@@ -638,36 +639,6 @@ def join_input():
 
         clock.tick(30)
 
-
-def join_lobby():
-    global role
-    clock = pg.time.Clock()
-    while True:
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                pg.quit()
-                sys.exit()
-        screen.fill((0, 0, 0))
-        title = title_font.render("JOIN LOBBY", True, (255,255,255))
-
-
-        # players_text = font.render(f"Players connected: {players}/{max_players}", True, (255,255,255))
-
-        info1 = font.render("Waiting for host to start... chop chop", True, (255,255,255))
-
-        screen.blit(title, (20, 150))
-        # screen.blit(players_text, (20, 220))
-        screen.blit(info1, (20, 260))
-
-        pg.display.update()
-
-        while incoming_messages:
-            msg = incoming_messages.pop(0)
-            if msg.startswith("ROLE:"):
-                _, role = msg.split(":")
-            elif msg == "START":
-                return True
-        clock.tick(30)
 
 
 def main_multiplayer():
@@ -739,9 +710,9 @@ if __name__ == "__main__":
             
         if mode == "join":
             role = "P2"
-            ip = join_input()
-            if ip:
-                start_client(ip)
-            # start_client("127.0.0.1") # for testing
+            # ip = join_input()
+            # if ip:
+            #     start_client(ip)
+            start_client("127.0.0.1") # for testing
             join_lobby()
             main_multiplayer()
