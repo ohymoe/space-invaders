@@ -142,14 +142,14 @@ pg.display.set_caption("space invaders....")
 player_speed = 1
 scoreX = 5
 scoreY = 5
-font = pg.font.Font('freesansbold.ttf', 20)
+font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 20)
 
 
 # Game Over
-game_over_font = pg.font.Font('freesansbold.ttf', 64)
-game_won_font = pg.font.Font('freesansbold.ttf', 64)
-title_font = pg.font.Font('freesansbold.ttf', 40)
-#subhead_font = pg.font.Font('freesansbold.ttf', 16)
+game_over_font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 64)
+game_won_font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 64)
+title_font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 40)
+#subhead_font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 16)
 
 def init_globals():
     global player_X, player_Y, player_Xchange, player2_X, player2_Y, player2_Xchange
@@ -159,13 +159,13 @@ def init_globals():
     global role, shooting, shoot_timer, current_shooter 
     global left_held, right_held
 
-    global sock
-    if sock:
-        try:
-            sock.close()
-        except:
-            pass
-    sock = None
+    # global sock
+    # if sock:
+    #     try:
+    #         sock.close()
+    #     except:
+    #         pass
+    # sock = None
 
     # player positions
     player_X = 370
@@ -207,7 +207,7 @@ def remote_input():
     while incoming_messages:
         msg = incoming_messages.pop(0)
         if msg.startswith("ROLE:"):
-            _, role = msg.split()
+            _, role = msg.split(":")
         if msg == "MOVE LEFT":
             player2_Xchange = -player_speed
         elif msg == "MOVE RIGHT":
@@ -255,13 +255,13 @@ def show_score(x, y):
 def game_over():
     screen.fill((0, 0, 0))
     game_over_text = game_over_font.render("GAME OVER", True, (255,255,255))
-    screen.blit(game_over_text, (190, 250))
+    screen.blit(game_over_text, (210, 250))
 
     score_text = font.render("Final Score: " + str(score_val), True, (255,255,255))
-    screen.blit(score_text, (320, 350))
+    screen.blit(score_text, (340, 350))
 
     prompt = font.render("Press ENTER to return to menu", True, (255,255,255))
-    screen.blit(prompt, (240, 450))
+    screen.blit(prompt, (260, 450))
 
     pg.display.update()
     while True:
@@ -565,6 +565,15 @@ def host_lobby():
         screen.fill((0, 0, 0))
         ip_text = font.render(f"Your IP: {local_ip}", True, (255,255,255))
         screen.blit(ip_text, (20, 180))
+
+        while incoming_messages:
+            msg = incoming_messages.pop(0)
+            if msg.startswith("ROLE:"):
+                _, role = msg.split(":")
+            elif msg == "JOINED":
+                player_joined = True
+
+
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
@@ -584,12 +593,6 @@ def host_lobby():
         screen.blit(info1, (20, 220))
         pg.display.update()
                 
-        while incoming_messages:
-            msg = incoming_messages.pop(0)
-            if msg.startswith("ROLE:"):
-                _, role = msg.split(":")
-            elif msg == "JOINED":
-                player_joined = True
 
         clock.tick(30)
 
@@ -710,6 +713,8 @@ def main_multiplayer():
 
 
 if __name__ == "__main__":
+    server_started = False
+
     while True:
         mode = start_menu()
         init_globals()
@@ -723,18 +728,20 @@ if __name__ == "__main__":
 
         if mode == "host":
             role = "P1"
-            run_server() # start server in background
-            import time
-            time.sleep(0.4)
+            if not server_started:
+                run_server() # start server in background
+                server_started = True
+                import time
+                time.sleep(0.4)
             start_client("127.0.0.1")
             host_lobby()
             main_multiplayer()
             
         if mode == "join":
             role = "P2"
-            # ip = join_input()
-            # if ip:
-            #     start_client(ip)
-            start_client("127.0.0.1") # for testing
+            ip = join_input()
+            if ip:
+                start_client(ip)
+            # start_client("127.0.0.1") # for testing
             join_lobby()
             main_multiplayer()

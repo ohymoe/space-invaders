@@ -22,10 +22,14 @@ def broadcast(message, source = None): #send msg to all clients
 def handle_client(client, address): # listens for messages from 1 client
     global player_slots
     try:
-        if len(player_slots) == 0:
+        current_roles = player_slots.values()
+        if "P1" not in current_roles:
             role = "P1"
-        elif len(player_slots) == 1:
+        elif "P2" not in current_roles:
             role = "P2"
+        else:
+            role = "SPECTATOR"
+
         player_slots[client] = role
         send_message(client, f"ROLE:{role}")
 
