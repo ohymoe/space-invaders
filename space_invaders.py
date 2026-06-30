@@ -91,7 +91,7 @@ def send_message(msg: str):
         except OSError:
             pass
 
-# --- LOBBIES ----
+# --- LOBBIES AND UI SCREENS  ----
 def get_local_ip():
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -423,47 +423,26 @@ def update_shooting():
         shoot_timer = 0
         current_shooter = None
 # --- UI SCREENS ----
-def show_score(x, y):
-    score = font.render("Points: " + str(score_val),
-                        True, (255,255,255))
-    screen.blit(score, (x , y ))
-    lives = font.render("Lives: " + str(player_lives),
-                        True, (255,255,255))
-    screen.blit(lives, (x, y + 30))
 
 def game_over():
     global running 
     screen.fill((0, 0, 0))
 
-    game_over_text = game_over_font.render("GAME OVER", True, (255,255,255))
-    screen.blit(game_over_text, (180, 200))
-
-    score_text = font.render("Final Score: " + str(score_val), True, (255,255,255))
-    screen.blit(score_text, (250, 300))
-
-    prompt = font.render("Press ENTER to return to menu", True, (255,255,255))
-    screen.blit(prompt, (125, 450))
+    screen.blit(game_over_font.render("GAME OVER", True, (255,255,255)), (180, 200))
+    screen.blit(font.render(f"Final Score: {score_val}", True, (255,255,255)), (250, 300))
+    screen.blit(font.render("Press ENTER to return to menu", True, (255,255,255)), (125, 450))    
     running = False
     pg.display.update()
+
     while True:
         for event in pg.event.get():
-            if event.type == pg.QUIT:
-                pg.quit()
-                sys.exit()
-            if event.type == pg.KEYDOWN:
-                if event.key == pg.K_RETURN:
-                    return False
+            if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
+                return
 def game_won():
     screen.fill((0, 0, 0))
-
-    game_won_text = game_won_font.render("congrats!", True, (255,255,255))
-    subhead = subhead_font.render("you've commited a mass murder.", True, (255,255,255))
-    screen.blit(game_won_text, (170, 200))
-    screen.blit(subhead, (160, 300))
-
-    prompt = font.render("Press ENTER to return to menu", True, (255,255,255))
-    screen.blit(prompt, (125, 450))
-
+    screen.blit(game_won_font.render("congrats!", True, (255,255,255)), (170, 200))
+    screen.blit(subhead_font.render("you've commited a mass murder.", True, (255,255,255)), (160, 300))
+    screen.blit(font.render("Press ENTER to return to menu", True, (255,255,255)), (125, 450))
     pg.display.update()
 
     while True:
@@ -474,32 +453,14 @@ def game_won():
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_RETURN:
                     return False
-
-
-
-def player(x, y):
-    screen.blit(playerImage, (x - 16, y + 10))
-
-def invader(x, y, i):
-    screen.blit(invaderImage[i], (x, y))
-
-def enemy_bullet(x, y):
-    screen.blit(bulletImage, (x, y))
-
 
 def start_menu():
     screen.blit(start_bg, (0, 0))
 
-    title = title_font.render("SPACE INVADERS", True, (255,255,255))
-    subtitle1 = font.render("SPACE = Solo", True, (255,255,255))
-    subtitle2 = font.render("H = Host Multiplayer", True, (255,255,255))
-    subtitle3 = font.render("J = Join Multiplayer", True, (255,255,255))
-
-    screen.blit(title, (20, 200))
-    screen.blit(subtitle1, (20, 260))
-    screen.blit(subtitle2, (20, 300))
-    screen.blit(subtitle3, (20, 340))
-    
+    screen.blit(title_font.render("SPACE INVADERS", True, (255,255,255)), (20, 200))
+    screen.blit(font.render("SPACE = Solo", True, (255,255,255)), (20, 260))
+    screen.blit(font.render("H = Host Multiplayer", True, (255,255,255)), (20, 300))
+    screen.blit(font.render("J = Join Multiplayer", True, (255,255,255)), (20, 340))    
     pg.display.update()
 
     while True:
@@ -515,53 +476,6 @@ def start_menu():
                 if event.key == pg.K_j:
                     return "join"
 
-    
-def render_invaders():
-    for i in range(no_of_invaders):
-        if invader_alive[i] and invader_Y[i] >= 0:
-            invader(invader_X[i], invader_Y[i], i)
-
-
-def draw():
-    player(player_X, player_Y)
-    if role == "P2":
-        screen.blit(playerImage, (player2_X - 16, player2_Y + 10))
-    show_score(scoreX, scoreY)
-
-def main():    
-    global running
-    running = True
-    won = False
-    remote_bullets.clear()
-
-    while running:
-        screen.blit(game_bg, (0, 0))
-
-        events()
-        move_player()
-        update_bullet(local_bullets)
-        update_invaders()
-        update_enemy_bullets()
-        update_shooting()
-        draw()
-
-        pg.display.update()
-
-        if player_lives <= 0:
-            running = False 
-        
-        if all(not alive for alive in invader_alive):
-            running = False
-            won = True
-
-    return won
-        
-
-
-
-
-        
-            
 def join_input():
 
     ip_str = ""
@@ -595,7 +509,57 @@ def join_input():
 
         clock.tick(30)
 
+# --- RENDER ---
 
+def show_score(x, y):
+    screen.blit(font.render(f"Points: {score_val}", True, (255,255,255)), (x, y))
+    screen.blit(font.render(f"Lives: {player_lives}", True, (255,255,255)), (x, y + 30))
+
+def player(x, y):
+    screen.blit(playerImage, (x - 16, y + 10))
+
+def invader(x, y, i):
+    screen.blit(invaderImage[i], (x, y))
+    
+def render_invaders():
+    for i in range(no_of_invaders):
+        if invader_alive[i] and invader_Y[i] >= 0:
+            invader(invader_X[i], invader_Y[i], i)
+
+def draw():
+    player(player_X, player_Y)
+    screen.blit(playerImage, (player2_X - 16, player2_Y + 10))
+    show_score(scoreX, scoreY)
+
+# --- MAIN GAME LOOP ----
+
+def main():    
+    global running
+    running = True
+    won = False
+    remote_bullets.clear()
+
+    while running:
+        screen.blit(game_bg, (0, 0))
+
+        events()
+        move_player()
+        update_bullet(local_bullets)
+        update_invaders()
+        update_enemy_bullets()
+        update_shooting()
+        draw()
+
+        pg.display.update()
+
+        if player_lives <= 0:
+            running = False 
+        
+        if all(not alive for alive in invader_alive):
+            running = False
+            won = True
+
+    return won
 
 def main_multiplayer():
     global running
@@ -638,13 +602,13 @@ def main_multiplayer():
 
 
 
-
 if __name__ == "__main__":
     server_started = False
 
     while True:
         mode = start_menu()
         init_globals()
+
         if mode == "solo":
             role = "P1"
             won = main()
@@ -653,7 +617,7 @@ if __name__ == "__main__":
             elif won:
                 game_won()
 
-        if mode == "host":
+        elif mode == "host":
             role = "P1"
             if not server_started:
                 run_server() # start server in background
@@ -664,7 +628,7 @@ if __name__ == "__main__":
             host_lobby()
             main_multiplayer()
             
-        if mode == "join":
+        elif mode == "join":
             role = "P2"
             # ip = join_input()
             # if ip:
