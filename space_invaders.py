@@ -51,6 +51,9 @@ laser = pg.image.load(resource_path('data/laser.png'))
 playerImage = scale_keep_aspect(tardis, 60)
 bulletImage = scale_keep_aspect(laser, 65)
 
+pg.mixer.init()
+shoot_sound = pg.mixer.Sound(resource_path("data/pew.wav"))
+
 # ---- FONTS ---- 
 scoreX = 5
 scoreY = 5
@@ -269,6 +272,7 @@ def events():
                     player_Y - bulletImage.get_height()
                 ])
                 send_message("SHOOT")
+                shoot_sound.play()
 
         if event.type == pg.KEYUP:
             if event.key == pg.K_LEFT:
@@ -309,6 +313,7 @@ def remote_input():
                 player2_X - 16 + playerImage.get_width()//2 - bulletImage.get_width()//2,
                 player2_Y - bulletImage.get_height()
             ])
+            shoot_sound.play()
         elif msg.startswith("ENEMY"):
             _, idx, x, y, alive = msg.split()
             idx = int(idx)
@@ -569,7 +574,7 @@ def main():
         draw()
 
         pg.display.update()
-        clock.tick(250)
+        clock.tick(300)
 
         if player_lives <= 0:
             running = False 
@@ -619,7 +624,7 @@ def main_multiplayer():
 
         draw()
         pg.display.update()
-        clock.tick(250)
+        clock.tick(300)
 
 
 
