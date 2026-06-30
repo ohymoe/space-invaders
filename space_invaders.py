@@ -90,6 +90,16 @@ def send_message(msg: str):
             sock.sendall((msg + "\n").encode("utf-8"))
         except OSError:
             pass
+def disconnect_client():
+    global sock, incoming_messages, role 
+    if sock:
+        try:
+            sock.close()
+        except OSError:
+            pass
+    sock = None 
+    role = None
+    incoming_messages.clear()
 
 # --- LOBBIES AND UI SCREENS  ----
 def get_local_ip():
@@ -437,6 +447,7 @@ def game_over():
     while True:
         for event in pg.event.get():
             if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
+                disconnect_client()
                 return
 def game_won():
     screen.fill((0, 0, 0))
@@ -450,9 +461,9 @@ def game_won():
             if event.type == pg.QUIT:
                 pg.quit()
                 sys.exit()
-            if event.type == pg.KEYDOWN:
-                if event.key == pg.K_RETURN:
-                    return False
+            if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
+                    disconnect_client()
+                    return
 
 def start_menu():
     screen.blit(start_bg, (0, 0))
@@ -606,6 +617,7 @@ if __name__ == "__main__":
     server_started = False
 
     while True:
+        disconnect_client()
         mode = start_menu()
         init_globals()
 
