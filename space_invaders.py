@@ -475,6 +475,36 @@ def game_won():
                     disconnect_client()
                     return
 
+def how_to_play():
+    clock = pg.time.Clock()
+    pg.event.clear()
+
+    while True:
+        screen.fill((0, 0, 0))
+
+        screen.blit(title_font.render("HOW TO PLAY", True, (255,255,255)), (20, 120))
+
+        screen.blit(font.render("Kill the Daleks before they reach you.", True, (255,255,255)), (20, 200))
+        screen.blit(font.render("Or not. There's always another way...", True, (255,255,255)), (20, 240))
+        screen.blit(font.render("(Sorry. Not in this game.)", True, (255,255,255)), (20, 280))
+
+        screen.blit(font.render("← →    Move", True, (255,255,255)), (20, 340))
+        screen.blit(font.render("SPACE  Shoot", True, (255,255,255)), (20, 380))
+
+        screen.blit(font.render("Press ENTER to return", True, (255,255,255)), (20, 480))
+
+        pg.display.update()
+
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                pg.quit()
+                sys.exit()
+            if event.type == pg.KEYDOWN and event.key == pg.K_RETURN:
+                return
+
+        clock.tick(30)
+
+
 def start_menu():
     screen.blit(start_bg, (0, 0))
 
@@ -482,6 +512,8 @@ def start_menu():
     screen.blit(font.render("SPACE = Solo", True, (255,255,255)), (20, 260))
     screen.blit(font.render("H = Host Multiplayer", True, (255,255,255)), (20, 300))
     screen.blit(font.render("J = Join Multiplayer", True, (255,255,255)), (20, 340))    
+    screen.blit(font.render("I = Instructions", True, (255,255,255)), (20, 380))
+
     pg.display.update()
 
     while True:
@@ -496,6 +528,10 @@ def start_menu():
                     return "host"
                 if event.key == pg.K_j:
                     return "join"
+                if event.key == pg.K_i:
+                    how_to_play()
+                    return None 
+
 
 def join_input():
 
