@@ -61,7 +61,7 @@ scoreY = 5
 font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 20)
 game_over_font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 50)
 game_won_font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 50)
-title_font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 40)
+title_font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 35)
 subhead_font = pg.font.Font("data\Press_Start_2P\PressStart2P-Regular.ttf", 16)
 
 # ---- NETWORKING -----
@@ -508,7 +508,7 @@ def how_to_play():
 def start_menu():
     screen.blit(start_bg, (0, 0))
 
-    screen.blit(title_font.render("SPACE INVADERS", True, (255,255,255)), (20, 200))
+    screen.blit(title_font.render("TARDIS INVADERS", True, (255,255,255)), (20, 200))
     screen.blit(font.render("SPACE = Solo", True, (255,255,255)), (20, 260))
     screen.blit(font.render("H = Host Multiplayer", True, (255,255,255)), (20, 300))
     screen.blit(font.render("J = Join Multiplayer", True, (255,255,255)), (20, 340))    
