@@ -694,9 +694,9 @@ if __name__ == "__main__":
             
         elif mode == "join":
             role = "P2"
-            # ip = join_input()
-            # if ip:
-            #     start_client(ip)
-            start_client("127.0.0.1") # for testing
+            ip = join_input()
+            if ip:
+                start_client(ip)
+            # start_client("127.0.0.1") # for testing
             join_lobby()
             main_multiplayer()

@@ -17,7 +17,7 @@ Space Invaders (Doctor Who Edition) AKA TARDIS invaders
 7. Both computers must be on the same Wi‑Fi
 
 Notes:
-* The game uses a simple client‑server model over TCP sockets
+* The game uses a client‑server model over TCP sockets
 * Both players must stay connected for the round to work
 * If the game crashes, restart both host and joiner
 * You can't replay a multiplayer round. Both players have to relaunch the game. Well, the option is there but its super funky. 
