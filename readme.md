@@ -1,5 +1,5 @@
 # TARDIS Invaders
-Space Invaders (Doctor Who Edition) built in Python using Pygame but with LAN multiplayer AKA **TARDIS invaders**
+Space Invaders (Doctor Who Edition) built in Python using Pygame but with LAN multiplayer AKA **TARDIS invaders** I'm studying networking right now and wanted to actually build something that uses sockets. Also I'm in a very Dr Who and sci-fi time of my life. Making multiplayer over LAN felt like a good challenge and a fun excuse to learn how client–server stuff works.
 
 ## How to play (itch.io )
 1. Download the ZIP
